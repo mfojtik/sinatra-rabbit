@@ -18,9 +18,6 @@ module Sinatra
   module Rabbit
 
     class BaseCollection < Sinatra::Base
-      attr_accessor :name, :description
-      attr_accessor :operations
-
       set :views, Proc.new { File.join(File::dirname(__FILE__), "..", "..", "views") }
       enable :method_overide
 
