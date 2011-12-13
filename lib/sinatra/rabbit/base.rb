@@ -68,7 +68,7 @@ module Sinatra
       def self.operation(operation_name, &block)
         @operations ||= []
         if operation_registred?(operation_name)
-          raise "Operation #{operation_name} already register in #{self.name} collection"
+          raise "Operation #{operation_name} already registered in #{self.name} collection"
         end
         @operations << (operation = operation_class(self, operation_name).generate(self, operation_name, &block))
         send(:head, route_for(path, operation_name, {})) { status 200 }
