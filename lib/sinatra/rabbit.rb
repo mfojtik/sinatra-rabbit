@@ -22,5 +22,11 @@ unless "".respond_to? :camelize
   end
 end
 
+class << Sinatra::Base
+  def options(path, opts={}, &bk)
+    route 'OPTIONS', path, opts, &bk
+  end
+end
+
 $:.unshift File.join(File::dirname(__FILE__), '.')
 require 'rabbit/base'

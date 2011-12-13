@@ -21,9 +21,12 @@ module Sinatra
       set :views, Proc.new { File.join(File::dirname(__FILE__), "..", "..", "views") }
       enable :method_overide
 
-      def self.route_for(collection, operation_name=nil)
+      def self.route_for(collection, operation_name=nil, no_member=false)
         if operation_name
           o = Sinatra::Rabbit::STANDARD_OPERATIONS[operation_name]
+          if no_member != false
+            o[:member], o[:collection] = no_member, true
+          end
           operation_path = (o && o[:member]) ? operation_name.to_s : nil
           id_param = (o && o[:collection]) ? nil : ":id"
           [route_for(collection), id_param, operation_path].compact.join('/')

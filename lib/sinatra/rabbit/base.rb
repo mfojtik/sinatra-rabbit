@@ -50,7 +50,12 @@ module Sinatra
 
       def self.generate(name, &block)
         @name = name.to_sym
+        send(:head, route_for(path), {}) { status 200 }
         class_eval(&block)
+        op_list = operations.freeze
+        send(:options, route_for(path), {}) do
+          [200, { 'Allow' => op_list.map { |o| o.operation_name }.join(',') }, '']
+        end
         self
       end
 
@@ -65,8 +70,12 @@ module Sinatra
         if operation_registred?(operation_name)
           raise "Operation #{operation_name} already register in #{self.name} collection"
         end
-        operation = operation_class(self, operation_name).generate(self, operation_name, &block)
+        @operations << (operation = operation_class(self, operation_name).generate(self, operation_name, &block))
+        send(:head, route_for(path, operation_name, {})) { status 200 }
         send(http_method_for(operation_name), route_for(path, operation_name), {}, &operation.control)
+        send(:options, route_for(path, operation_name, :member), {}) do
+          [200, { 'Allow' => operation.params.map { |p| p.to_s }.join(',') }, '']
+        end
         self
       end
 
@@ -79,6 +88,8 @@ module Sinatra
           class_eval(&block)
           self
         end
+
+        def self.operation_name; @name; end
 
         def self.description(text)
           @description = text
@@ -104,6 +115,8 @@ module Sinatra
         def self.param(*args)
           @params << Rabbit::Param.new(*args)
         end
+
+        def self.params; @params; end
       end
 
       private

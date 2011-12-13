@@ -17,6 +17,20 @@ as well as in Deltacloud.
 
 Full documentation: [rubydoc.info/github/mifo/sinatra-rabbit](http://rubydoc.info/github/mifo/sinatra-rabbit/master)
 
+Features
+-------
+
+* Automatically generate proper path and use right HTTP method for all CRUD operations:
+  * `operation :create` is being mapped as 'POST /:collection'
+  * `operation :index` is being mapped as 'GET /:collection'
+  * `operation :show` is being mapped as 'GET /:collection/:id'
+  * `operation :update` is being mapped as 'PUT /:collection/:id'
+  * `operation :destroy` is being mapped as 'DELETE /:collection/:id'
+* Generate HEAD routes for all operations and collections
+* Generate OPTIONS routes for all operations and collections
+  * `OPTIONS /:collection` will return list of all operations (using 'Allow' header)
+  * `OPTIONS /:collection/:operation` will return list of parameters defined for given operation (using 'Allow' header)
+
 TODO
 -------
 
@@ -35,25 +49,6 @@ Add possibility to check if operation is supported on given resource
         with_capability :list_images
       end
     end
-
-Auto generate HEAD routes for all operations
-
-    HEAD /images/create
-    # => 200
-    HEAD /images/destroy
-    # => 501
-    HEAD /images/unknown_operation
-    # => 404
-
-Auto generate OPTIONS for all collections with list of supported operations
-
-    OPTIONS /images
-    # => index,show,create,destroy
-
-Auto generate OPTIONS for all operations with list of supported parameters
-
-    OPTIONS /images/create
-    # => name:optional,instance_id:required
 
 Auto generate documentation routes
 

@@ -31,6 +31,10 @@ module Sinatra
       def enum?; !@values.nil?; end
       def number?; [:integer, :float].include?(@klass); end
 
+      def to_s
+        "#{name}:#{klass}:#{required? ? 'required' : 'optional'}"
+      end
+
       private
 
       def parse_params!(args)
