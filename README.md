@@ -15,6 +15,55 @@ project. However this is an complete rewrite of the original Deltacloud Rabbit.
 The goal is to make Rabbit highly modular, so it can be used in other projects
 as well as in Deltacloud.
 
+TODO
+-------
+
+* Add possibility to specify per-operation features
+
+    features :images do
+      operation :create do
+        param :instance_id, :optional
+      end
+    end
+
+* Add possibility to check if operation is supported on given resource
+
+    collection :images do
+      operation :index do
+        with_capability :list_images
+      end
+    end
+
+* Auto generate HEAD routes for all operations
+
+    HEAD /images/create
+    # => 200
+    HEAD /images/destroy
+    # => 501
+    HEAD /images/unknown_operation
+    # => 404
+
+* Auto generate OPTIONS for all collections with list of supported operations
+
+    OPTIONS /images
+    # => index,show,create,destroy
+
+* Auto generate OPTIONS for all operations with list of supported parameters
+
+    OPTIONS /images/create
+    # => name:optional,instance_id:required
+
+* Auto generate documentation routes
+
+    GET /doc/images
+
+* Add support for sub-collections
+
+    collection :buckets do
+      subcollection :blobs do
+      end
+    end
+
 Installation
 -------
 
