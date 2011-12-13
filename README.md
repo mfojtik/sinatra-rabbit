@@ -15,6 +15,8 @@ project. However this is an complete rewrite of the original Deltacloud Rabbit.
 The goal is to make Rabbit highly modular, so it can be used in other projects
 as well as in Deltacloud.
 
+Full documentation: [rubydoc.info/github/mifo/sinatra-rabbit](http://rubydoc.info/github/mifo/sinatra-rabbit/master)
+
 TODO
 -------
 
