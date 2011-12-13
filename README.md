@@ -5,7 +5,7 @@ Sinatra::Rabbit is a [Sinatra](http://www.sinatrarb.com) extensions that
 makes designing a [REST API](http://en.wikipedia.org/wiki/Representational_State_Transfer)
 much easier.
 
-Rabbit threat REST resource as 'collection'. Every collection then
+Rabbit treats REST resource as 'collection'. Every collection then
 could have multiple operations. This simple DSL is then transformed into
 a proper modular [Sinatra::Base](http://www.sinatrarb.com/intro#Serving%20a%20Modular%20Application) 
 application that can be launched within any [Rack](http://rack.rubyforge.org/) container (including Rails).
