@@ -18,7 +18,7 @@ as well as in Deltacloud.
 TODO
 -------
 
-* Add possibility to specify per-operation features
+Add possibility to specify per-operation features
 
     features :images do
       operation :create do
@@ -26,7 +26,7 @@ TODO
       end
     end
 
-* Add possibility to check if operation is supported on given resource
+Add possibility to check if operation is supported on given resource
 
     collection :images do
       operation :index do
@@ -34,7 +34,7 @@ TODO
       end
     end
 
-* Auto generate HEAD routes for all operations
+Auto generate HEAD routes for all operations
 
     HEAD /images/create
     # => 200
@@ -43,21 +43,21 @@ TODO
     HEAD /images/unknown_operation
     # => 404
 
-* Auto generate OPTIONS for all collections with list of supported operations
+Auto generate OPTIONS for all collections with list of supported operations
 
     OPTIONS /images
     # => index,show,create,destroy
 
-* Auto generate OPTIONS for all operations with list of supported parameters
+Auto generate OPTIONS for all operations with list of supported parameters
 
     OPTIONS /images/create
     # => name:optional,instance_id:required
 
-* Auto generate documentation routes
+Auto generate documentation routes
 
     GET /doc/images
 
-* Add support for sub-collections
+Add support for sub-collections
 
     collection :buckets do
       subcollection :blobs do
@@ -73,7 +73,7 @@ Usage
 -------
 
     require 'sinatra/base'
-    require 'sinatra/rabbit'
+    arequire 'sinatra/rabbit'
 
     class MySinatraApp < Sinatra::Base
       include Sinatra::Rabbit
