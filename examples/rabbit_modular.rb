@@ -6,6 +6,11 @@ require 'sinatra/rabbit'
 
 ############## EXAMPLE #################
 
+Sinatra::Rabbit.configure do
+  enable :documentation
+  enable :head_routes
+  enable :options_routes
+end
 
 class Example < Sinatra::Base
 
@@ -15,10 +20,38 @@ class Example < Sinatra::Base
     enable :logging
   end
 
+  collection :instances do
+    description "Instances description"
+
+    operation :index do
+      description "Index operation description"
+      control do
+        status 200
+        "Hello from instances index operation"
+      end
+    end
+
+    operation :show do
+      description "Index operation description"
+      param :id,  :string, :required, "Instance identifier"
+      control do
+        "Hey #{params[:id]}"
+      end
+    end
+  end
+
   collection :images do
     description "Images description"
 
     operation :index do
+      description "Index operation description"
+      control do
+        status 200
+        "Hello from index operation"
+      end
+    end
+
+    operation :destroy do
       description "Index operation description"
       control do
         status 200

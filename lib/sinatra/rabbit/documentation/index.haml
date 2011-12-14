@@ -1,0 +1,8 @@
+%html
+  %head
+  %body
+    %h1 Rabbit DSL documentation
+    %ul
+      - collections.each do |collection|
+        %li
+          %a{ :href => Sinatra::Rabbit::BaseCollection.root_path + self.class.doc_route_for(collection.collection_name) }=collection.collection_name.to_s.capitalize

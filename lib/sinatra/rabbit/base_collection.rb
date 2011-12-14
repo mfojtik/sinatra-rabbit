@@ -21,17 +21,17 @@ module Sinatra
       set :views, Proc.new { File.join(File::dirname(__FILE__), "..", "..", "views") }
       enable :method_overide
 
-      def self.route_for(collection, operation_name=nil, no_member=false)
+      def self.route_for(collection, operation_name=nil, member=:member)
         if operation_name
           o = Sinatra::Rabbit::STANDARD_OPERATIONS[operation_name]
-          if no_member != false
-            o[:member], o[:collection] = no_member, true
-          end
+          o[:member] = false if member == :no_member
+          o[:collection] = true if member == :no_id
+          o[:collection], o[:member] = true, true if member == :no_id_and_member
           operation_path = (o && o[:member]) ? operation_name.to_s : nil
           id_param = (o && o[:collection]) ? nil : ":id"
           [route_for(collection), id_param, operation_path].compact.join('/')
         else
-          "/#{collection}"
+          collection.to_s
         end
       end
 
@@ -42,6 +42,10 @@ module Sinatra
 
       def self.collection_class(name)
         Sinatra::Rabbit.const_set(name.to_s.camelize + 'Collection', Class.new(Collection))
+      end
+
+      def self.root_path
+        Sinatra::Rabbit.configuration[:root_path]
       end
 
     end

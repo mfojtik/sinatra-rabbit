@@ -32,13 +32,30 @@ module Sinatra
       def collection(name, &block)
         @collections ||= []
         @collections << (current_collection = BaseCollection.collection_class(name).generate(name, &block))
+        Sinatra::Rabbit::DSL.register_collection(current_collection)
         use current_collection
+        use current_collection.documentation unless Rabbit.disabled? :documentation
       end
 
       # Return all defined collections
       #
       def collections
         @collections
+      end
+
+      def self.collections
+        @collections
+      end
+
+      def self.register_collection(c)
+        @collections ||= []
+        @collections << c
+      end
+
+      module Helper
+        def collections
+          Sinatra::Rabbit::DSL.collections
+        end
       end
 
     end

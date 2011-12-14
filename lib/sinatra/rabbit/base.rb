@@ -18,6 +18,7 @@ require 'sinatra/rabbit/dsl'
 require 'sinatra/rabbit/param'
 require 'sinatra/rabbit/base_collection'
 require 'sinatra/rabbit/validator'
+require 'sinatra/rabbit/documentation'
 
 module Sinatra
   module Rabbit
@@ -30,7 +31,9 @@ module Sinatra
     }
 
     def self.configure(&block)
-      @configuration ||= {}
+      @configuration ||= {
+        :root_path => '/'
+      }
       instance_eval(&block)
     end
 
@@ -54,6 +57,10 @@ module Sinatra
       @configuration[property] = false
     end
 
+    def self.set(property, value)
+      @configuration[property] = value
+    end
+
     # Automatically register the DSL to Sinatra::Base if this
     # module is included:
     #
@@ -70,20 +77,28 @@ module Sinatra
     class Collection < BaseCollection
 
       def self.generate(name, &block)
-        @name = name.to_sym
-        send(:head, route_for(path), {}) { status 200 } unless Rabbit.disabled? :head_routes
+        @collection_name = name.to_sym
+        send(:head, root_path + route_for(path), {}) { status 200 } unless Rabbit.disabled? :head_routes
         class_eval(&block)
         op_list = operations.freeze
-        send(:options, route_for(path), {}) do
+        send(:options, root_path + route_for(path), {}) do
           [200, { 'Allow' => op_list.map { |o| o.operation_name }.join(',') }, '']
         end unless Rabbit.disabled? :options_routes
         self
       end
 
-      def self.path; @name; end
+      def self.collection_name; @collection_name; end
+
+      class << self
+        alias_method :path, :collection_name
+      end
 
       def self.description(text)
         @description = text
+      end
+
+      def self.documentation
+        Rabbit::Documentation.for_collection(self, operations)
       end
 
       def self.operation(operation_name, &block)
@@ -93,11 +108,11 @@ module Sinatra
         end
         @operations << (operation = operation_class(self, operation_name).generate(self, operation_name, &block))
         unless Rabbit.disabled? :head_routes
-          send(:head, route_for(path, operation_name, {})) { status 200 }
+          send(:head, root_path + route_for(path, operation_name, {})) { status 200 }
         end
-        send(http_method_for(operation_name), route_for(path, operation_name), {}, &operation.control)
+        send(http_method_for(operation_name), root_path + route_for(path, operation_name), {}, &operation.control)
         unless Rabbit.disabled? :options_routes
-          send(:options, route_for(path, operation_name, :member), {}) do
+          send(:options, root_path + route_for(path, operation_name, :member), {}) do
             [200, { 'Allow' => operation.params.map { |p| p.to_s }.join(',') }, '']
           end
         end
