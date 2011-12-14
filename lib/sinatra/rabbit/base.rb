@@ -30,7 +30,24 @@ module Sinatra
     }
 
     def self.configure(&block)
+      @configuration ||= {}
       instance_eval(&block)
+    end
+
+    def self.configuration
+      @configuration || {}
+    end
+
+    def self.enable(property)
+      @configuration[property] = true
+    end
+
+    def self.enabled?(property)
+      !@configuration[property].nil?
+    end
+
+    def self.disable(property)
+      @configuration.delete(property)
     end
 
     # Automatically register the DSL to Sinatra::Base if this
