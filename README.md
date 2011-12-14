@@ -39,6 +39,7 @@ Rabbit behavior can be customized using `configure` method:
     Sinatra::Rabbit.configure do
       disable :head_routes      # This will disable automatic generation of HEAD routes
       disable :options_routes   # This will disable automatic generation of OPTIONS routes
+      disable :documentation    # This will disable automatic generation of documentation routes
     end
 
 
