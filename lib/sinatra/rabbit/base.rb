@@ -43,11 +43,15 @@ module Sinatra
     end
 
     def self.enabled?(property)
-      !@configuration[property].nil?
+      !@configuration[property].nil? and @configuration[property] == true
+    end
+
+    def self.disabled?(property)
+      !@configuration[property].nil? and @configuration[property] == false
     end
 
     def self.disable(property)
-      @configuration.delete(property)
+      @configuration[property] = false
     end
 
     # Automatically register the DSL to Sinatra::Base if this
@@ -67,12 +71,12 @@ module Sinatra
 
       def self.generate(name, &block)
         @name = name.to_sym
-        send(:head, route_for(path), {}) { status 200 }
+        send(:head, route_for(path), {}) { status 200 } unless Rabbit.disabled? :head_routes
         class_eval(&block)
         op_list = operations.freeze
         send(:options, route_for(path), {}) do
           [200, { 'Allow' => op_list.map { |o| o.operation_name }.join(',') }, '']
-        end
+        end unless Rabbit.disabled? :options_routes
         self
       end
 
@@ -88,10 +92,14 @@ module Sinatra
           raise "Operation #{operation_name} already registered in #{self.name} collection"
         end
         @operations << (operation = operation_class(self, operation_name).generate(self, operation_name, &block))
-        send(:head, route_for(path, operation_name, {})) { status 200 }
+        unless Rabbit.disabled? :head_routes
+          send(:head, route_for(path, operation_name, {})) { status 200 }
+        end
         send(http_method_for(operation_name), route_for(path, operation_name), {}, &operation.control)
-        send(:options, route_for(path, operation_name, :member), {}) do
-          [200, { 'Allow' => operation.params.map { |p| p.to_s }.join(',') }, '']
+        unless Rabbit.disabled? :options_routes
+          send(:options, route_for(path, operation_name, :member), {}) do
+            [200, { 'Allow' => operation.params.map { |p| p.to_s }.join(',') }, '']
+          end
         end
         self
       end

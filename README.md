@@ -31,6 +31,17 @@ Features
   * `OPTIONS /:collection` will return list of all operations (using 'Allow' header)
   * `OPTIONS /:collection/:operation` will return list of parameters defined for given operation (using 'Allow' header)
 
+Configuration
+-------
+
+Rabbit behavior can be customized using `configure` method:
+
+    Sinatra::Rabbit.configure do
+      disable :head_routes      # This will disable automatic generation of HEAD routes
+      disable :options_routes   # This will disable automatic generation of OPTIONS routes
+    end
+
+
 TODO
 -------
 
