@@ -89,7 +89,7 @@ Usage
 -------
 
     require 'sinatra/base'
-    arequire 'sinatra/rabbit'
+    require 'sinatra/rabbit'
 
     class MySinatraApp < Sinatra::Base
       include Sinatra::Rabbit
@@ -115,6 +115,7 @@ Usage
             "Hey #{params[:id]}"
           end
         end
+      end
     end
 
     MySinatraApp.run!
