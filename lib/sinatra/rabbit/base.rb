@@ -126,7 +126,9 @@ module Sinatra
         end
         if opts.has_key? :if
           send(:set, :if_true) do |value|
-            condition { value == true }
+            condition do
+              (value.kind_of?(Proc) ? value.call : value) == true
+            end
           end
           opts[:if_true] = opts.delete(:if)
         end
