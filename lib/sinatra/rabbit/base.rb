@@ -114,7 +114,7 @@ module Sinatra
         Rabbit::Documentation.for_collection(self, operations)
       end
 
-      def self.operation(operation_name, &block)
+      def self.operation(operation_name, opts={}, &block)
         @operations ||= []
         return @operations.find { |o| o.operation_name == operation_name } unless block_given?
         if operation_registred?(operation_name)
@@ -124,7 +124,13 @@ module Sinatra
         unless Rabbit.disabled? :head_routes
           send(:head, root_path + route_for(path, operation_name, {})) { status 200 }
         end
-        send(http_method_for(operation_name), root_path + route_for(path, operation_name), {}, &operation.control)
+        if opts.has_key? :if
+          send(:set, :if_true) do |value|
+            condition { value == true }
+          end
+          opts[:if_true] = opts.delete(:if)
+        end
+        send(http_method_for(operation_name), root_path + route_for(path, operation_name), opts, &operation.control)
         unless Rabbit.disabled? :options_routes
           send(:options, root_path + route_for(path, operation_name, :member), {}) do
             [200, { 'Allow' => operation.params.map { |p| p.to_s }.join(',') }, '']
@@ -157,8 +163,7 @@ module Sinatra
               Rabbit::Validator.validate!(params, params_def)
             rescue => e
               if e.kind_of? Rabbit::Validator::ValidationError
-                status e.http_status_code
-                halt
+                halt e.http_status_code, e.message
               else
                 raise e
               end

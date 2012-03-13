@@ -18,7 +18,7 @@ class Example < Sinatra::Base
   collection :images do
     description "Images description"
 
-    operation :index do
+    operation :index, :if => (1 == 2) do
       description "Index operation description"
       control do
         status 200
