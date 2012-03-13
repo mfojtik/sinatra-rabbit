@@ -24,12 +24,14 @@ module Sinatra
         @name, @klass = args.pop, args.pop
         raise "DSL: You need to specify the name and param type (#{@name})" unless @name or @klass
         parse_params!(args)
+        @description ||= "Description not available"
       end
 
       def required?; @required == true; end
       def optional?; !required?; end
       def enum?; !@values.nil?; end
-      def number?; [:integer, :float].include?(@klass); end
+      def number?; [:integer, :float, :number].include?(@klass); end
+      def string?; @klass == :string; end
 
       def to_s
         "#{name}:#{klass}:#{required? ? 'required' : 'optional'}"
@@ -38,12 +40,8 @@ module Sinatra
       private
 
       def parse_params!(args)
-        if args.pop == :required
-          @required = true
-        else
-          @required = false
-        end
         @values = args.pop if args.last.kind_of? Array
+        @required = args.pop == :required if [:required, :optional].include? args.last
         @description = args.pop
       end
 
