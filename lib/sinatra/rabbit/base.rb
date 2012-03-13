@@ -14,11 +14,19 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-require 'sinatra/rabbit/dsl'
-require 'sinatra/rabbit/param'
-require 'sinatra/rabbit/base_collection'
-require 'sinatra/rabbit/validator'
-require 'sinatra/rabbit/documentation'
+unless Kernel.respond_to?(:require_relative)
+  module Kernel
+    def require_relative(path)
+      require File.join(File.dirname(caller[0]), path.to_str)
+    end
+  end
+end
+
+require_relative './dsl'
+require_relative './param'
+require_relative './base_collection'
+require_relative './validator'
+require_relative './documentation'
 
 module Sinatra
   module Rabbit
@@ -31,9 +39,6 @@ module Sinatra
     }
 
     def self.configure(&block)
-      @configuration ||= {
-        :root_path => '/'
-      }
       instance_eval(&block)
     end
 
@@ -71,6 +76,9 @@ module Sinatra
     #     end
     #
     def self.included(base)
+      @configuration ||= {
+        :root_path => '/'
+      }
       base.register(DSL)
     end
 
@@ -80,11 +88,15 @@ module Sinatra
         @collection_name = name.to_sym
         send(:head, root_path + route_for(path), {}) { status 200 } unless Rabbit.disabled? :head_routes
         class_eval(&block)
-        op_list = operations.freeze
+        op_list = operations
         send(:options, root_path + route_for(path), {}) do
           [200, { 'Allow' => op_list.map { |o| o.operation_name }.join(',') }, '']
         end unless Rabbit.disabled? :options_routes
         self
+      end
+
+      def self.control
+        raise "The 'control' statement must be used only within context of Operation"
       end
 
       def self.collection_name; @collection_name; end
@@ -93,7 +105,8 @@ module Sinatra
         alias_method :path, :collection_name
       end
 
-      def self.description(text)
+      def self.description(text=nil)
+        return @description if text.nil?
         @description = text
       end
 
@@ -103,6 +116,7 @@ module Sinatra
 
       def self.operation(operation_name, &block)
         @operations ||= []
+        return @operations.find { |o| o.operation_name == operation_name } unless block_given?
         if operation_registred?(operation_name)
           raise "Operation #{operation_name} already registered in #{self.name} collection"
         end
@@ -131,7 +145,8 @@ module Sinatra
 
         def self.operation_name; @name; end
 
-        def self.description(text)
+        def self.description(text=nil)
+          return @description if text.nil?
           @description = text
         end
 
@@ -153,6 +168,7 @@ module Sinatra
         end
 
         def self.param(*args)
+          return @params.find { |p| p.name == args[0] } if args.size == 1
           @params << Rabbit::Param.new(*args)
         end
 
@@ -167,7 +183,11 @@ module Sinatra
 
       # Create an unique class name for all operations within Collection class
       def self.operation_class(collection_klass, operation_name)
-        collection_klass.const_set(operation_name.to_s.camelize + 'Operation', Class.new(Operation))
+        begin
+          collection_klass.const_get(operation_name.to_s.camelize + 'Operation', Class.new(Operation))
+        rescue NameError
+          collection_klass.const_set(operation_name.to_s.camelize + 'Operation', Class.new(Operation))
+        end
       end
 
     end
