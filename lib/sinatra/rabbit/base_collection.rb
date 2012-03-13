@@ -24,10 +24,16 @@ module Sinatra
       def self.route_for(collection, operation_name=nil, member=:member)
         if operation_name
           o = Sinatra::Rabbit::STANDARD_OPERATIONS[operation_name]
-          o[:member] = false if member == :no_member
-          o[:collection] = true if member == :no_id
-          o[:collection], o[:member] = true, true if member == :no_id_and_member
+          if o
+            o[:member] = false if member == :no_member
+            o[:collection] = true if member == :no_id
+            if member == :no_id_and_member
+              o[:collection] = true
+              o[:member] = true
+            end
+          end
           operation_path = (o && o[:member]) ? operation_name.to_s : nil
+          operation_path = operation_name.to_s unless o
           id_param = (o && o[:collection]) ? nil : ":id"
           [route_for(collection), id_param, operation_path].compact.join('/')
         else
@@ -40,11 +46,12 @@ module Sinatra
         (o && o[:method]) ? o[:method] : :get
       end
 
-      def self.collection_class(name)
+      def self.collection_class(name, parent_class=nil)
+        klass = parent_class || Sinatra::Rabbit
         begin
-          Sinatra::Rabbit.const_get(name.to_s.camelize + 'Collection', Class.new(Collection))
+          klass.const_get(name.to_s.camelize + 'Collection', Class.new(Collection))
         rescue NameError
-          Sinatra::Rabbit.const_set(name.to_s.camelize + 'Collection', Class.new(Collection))
+          klass.const_set(name.to_s.camelize + 'Collection', Class.new(Collection))
         end
       end
 

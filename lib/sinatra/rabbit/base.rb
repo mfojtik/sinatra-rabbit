@@ -84,9 +84,13 @@ module Sinatra
 
     class Collection < BaseCollection
 
-      def self.generate(name, &block)
+      include DSL
+
+      def self.generate(name, parent_collection=nil, &block)
         @collection_name = name.to_sym
-        send(:head, root_path + route_for(path), {}) { status 200 } unless Rabbit.disabled? :head_routes
+        @collections ||= []
+        @parent_collection = parent_collection
+        send(:head, full_path, {}) { status 200 } unless Rabbit.disabled? :head_routes
         class_eval(&block)
         op_list = operations
         send(:options, root_path + route_for(path), {}) do
@@ -95,15 +99,38 @@ module Sinatra
         self
       end
 
+      def self.collection(name, &block)
+        unless block_given?
+          return @collections.find { |c| c.collection_name == name }
+        end
+        @collections << (current_collection = BaseCollection.collection_class(name, self).generate(name, self, &block))
+      end
+
+      def self.parent_routes
+        return '' if @parent_collection.nil?
+        route = ["#{@parent_collection.collection_name}"]
+        current_parent = @parent_collection
+        while current_parent = current_parent.parent_collection
+          route << current_parent.collection_name
+        end
+        route.reverse.join('/')+'/'
+      end
+
       def self.control
         raise "The 'control' statement must be used only within context of Operation"
       end
 
-      def self.collection_name; @collection_name; end
-
-      class << self
-        alias_method :path, :collection_name
+      def self.path
+        parent_routes + collection_name.to_s
       end
+
+      def self.full_path
+        root_path + route_for(path)
+      end
+
+      def self.collection_name; @collection_name; end
+      def self.parent_collection; @parent_collection; end
+      def self.collections; @collections; end
 
       def self.description(text=nil)
         return @description if text.nil?
@@ -132,7 +159,8 @@ module Sinatra
           end
           opts[:if_true] = opts.delete(:if)
         end
-        send(http_method_for(operation_name), root_path + route_for(path, operation_name), opts, &operation.control)
+        operation.set_route(root_path + route_for(path, operation_name))
+        send(http_method_for(operation_name), operation.full_path, opts, &operation.control)
         unless Rabbit.disabled? :options_routes
           send(:options, root_path + route_for(path, operation_name, :member), {}) do
             [200, { 'Allow' => operation.params.map { |p| p.to_s }.join(',') }, '']
@@ -145,12 +173,17 @@ module Sinatra
 
       class Operation
 
+        def self.set_route(path)
+          @operation_path = path
+        end
+
         def self.generate(collection, name, &block)
           @name, @params = name, []
           class_eval(&block)
           self
         end
 
+        def self.full_path; @operation_path; end
         def self.operation_name; @name; end
 
         def self.description(text=nil)

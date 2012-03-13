@@ -9,6 +9,34 @@ class Sample < Sinatra::Base
   include Sinatra::Rabbit
 
   collection :sample do
+
+    collection :subsample do
+
+      collection :secondsubsample do
+        description "SecondSubCollection"
+        operation :index do
+          control do
+            status 200
+          end
+        end
+
+      end
+
+      description "Subcollection"
+
+      operation :index do
+        control do
+          status 200
+        end
+      end
+
+      operation :start do
+        control do
+          status 200
+        end
+      end
+    end
+
     description "Test"
 
     operation :index do
@@ -18,6 +46,39 @@ class Sample < Sinatra::Base
         status 200
       end
     end
+
+    operation :show do
+      description "TestIndex"
+      param :id, :string, :required, "TestParam"
+      control do
+        status 200
+      end
+    end
+
+    operation :create do
+      description "TestIndex"
+      param :id, :string, :required, "TestParam"
+      control do
+        status 200
+      end
+    end
+
+    operation :destroy do
+      description "TestIndex"
+      param :id, :string, :required, "TestParam"
+      control do
+        status 200
+      end
+    end
+
+    operation :stop do
+      description "TestIndex"
+      param :id, :string, :required, "TestParam"
+      control do
+        status 200
+      end
+    end
+
   end
 
   collection :second_sample do
@@ -76,6 +137,10 @@ describe Sinatra::Rabbit::Collection do
     Sample.collection(:second_sample).collection_name.must_equal :second_sample
   end
 
+  it "should have correct URI set" do
+    Sample.collection(:sample).full_path.must_equal '/sample'
+  end
+
   it "should return correct collection description" do
     Sample.collection(:sample).description.must_equal 'Test'
     Sample.collection(:second_sample).description.must_equal 'SecondTest'
@@ -84,6 +149,37 @@ describe Sinatra::Rabbit::Collection do
   it "should return operations and find index operation" do
     Sample.collection(:sample).operations.wont_be_empty
     Sample.collection(:sample).operations.must_include Sinatra::Rabbit::SampleCollection::IndexOperation
+  end
+
+  it "should allow to define subcollection" do
+    Sample.collection(:sample).collections.wont_be_empty
+    Sample.collection(:sample).collections.must_include Sinatra::Rabbit::SampleCollection::SubsampleCollection
+  end
+
+  it "should allow to retrieve subcollection from collection" do
+    Sample.collection(:sample).collection(:subsample).must_equal Sinatra::Rabbit::SampleCollection::SubsampleCollection
+  end
+
+  it "should allow to retrieve subcollection parent collection" do
+    Sample.collection(:sample).collection(:subsample).parent_collection.must_equal Sinatra::Rabbit::SampleCollection
+  end
+
+  it "should allow to get all operations defined for subcollection" do
+    Sample.collection(:sample).collection(:subsample).operations.must_include Sinatra::Rabbit::SampleCollection::SubsampleCollection::IndexOperation
+    Sample.collection(:sample).collection(:subsample).operations.must_include Sinatra::Rabbit::SampleCollection::SubsampleCollection::StartOperation
+  end
+
+  it "should have correct URI set for operations in subcollection" do
+    Sample.collection(:sample).collection(:subsample).operation(:index).full_path.must_equal '/sample/subsample'
+    Sample.collection(:sample).collection(:subsample).operation(:start).full_path.must_equal '/sample/subsample/:id/start'
+  end
+
+  it "should have correct URI set for subcollection" do
+    Sample.collection(:sample).collection(:subsample).full_path.must_equal '/sample/subsample'
+  end
+
+  it "should allow to have deeper subcollections" do
+    Sample.collection(:sample).collection(:subsample).collection(:secondsubsample).must_equal Sinatra::Rabbit::SampleCollection::SubsampleCollection::SecondsubsampleCollection
   end
 
 end
@@ -122,6 +218,26 @@ describe Sinatra::Rabbit::Collection::Operation do
 
   it "should have control block" do
     Sample.collection(:sample).operation(:index).respond_to?(:control).must_equal true
+  end
+
+  it "should have correct path for index operation" do
+    Sample.collection(:sample).operation(:index).full_path.must_equal '/sample'
+  end
+
+  it "should have correct path for create operation" do
+    Sample.collection(:sample).operation(:create).full_path.must_equal '/sample'
+  end
+
+  it "should have correct path for show operation" do
+    Sample.collection(:sample).operation(:show).full_path.must_equal '/sample/:id'
+  end
+
+  it "should have correct path for destroy operation" do
+    Sample.collection(:sample).operation(:show).full_path.must_equal '/sample/:id'
+  end
+
+  it "should have correct path for stop operation" do
+    Sample.collection(:sample).operation(:stop).full_path.must_equal '/sample/:id/stop'
   end
 
 end
