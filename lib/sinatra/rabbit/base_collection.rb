@@ -41,7 +41,11 @@ module Sinatra
       end
 
       def self.collection_class(name)
-        Sinatra::Rabbit.const_set(name.to_s.camelize + 'Collection', Class.new(Collection))
+        begin
+          Sinatra::Rabbit.const_get(name.to_s.camelize + 'Collection', Class.new(Collection))
+        rescue NameError
+          Sinatra::Rabbit.const_set(name.to_s.camelize + 'Collection', Class.new(Collection))
+        end
       end
 
       def self.root_path
