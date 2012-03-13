@@ -26,6 +26,7 @@ Features
   * `operation :show` is being mapped as 'GET /:collection/:id'
   * `operation :update` is being mapped as 'PUT /:collection/:id'
   * `operation :destroy` is being mapped as 'DELETE /:collection/:id'
+* Use of Sinatra route conditions
 * Generate HEAD routes for all operations and collections
 * Generate OPTIONS routes for all operations and collections
   * `OPTIONS /:collection` will return list of all operations (using 'Allow' header)
@@ -72,14 +73,6 @@ Add possibility to specify per-operation features
       end
     end
 
-Add possibility to check if operation is supported on given resource
-
-    collection :images do
-     operation :create, :if => model.respond_to?(:create_image) do
-       # do operation
-     end
-    end
-
 Add support for sub-collections
 
     collection :buckets do
@@ -107,7 +100,7 @@ Usage
       collection :images do
         description "Images description"
 
-        operation :index do
+        operation :index, :if => lambda { 1 == 1} do
           description "Index operation description"
           control do
             status 200
