@@ -28,6 +28,7 @@ Features
   * `operation :destroy` is being mapped as 'DELETE /:collection/:id'
 * Use of Sinatra route conditions
 
+
     operation :stop, :if => driver.support_stop_operation? do
       description "Stop virtual machine"
       param :id, :string, :required, "Virtual Machine ID"
@@ -35,6 +36,7 @@ Features
         # ...
       end
     end
+
 
 * Support operation specific features
 * Support REST subcollections
