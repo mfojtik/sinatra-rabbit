@@ -47,11 +47,6 @@ module Sinatra
       end
 
       def self.register_collection(c, &block)
-        if block_given?
-          instance_eval do
-            collection c, block
-          end
-        end
         @collections ||= []
         @collections << c
       end
