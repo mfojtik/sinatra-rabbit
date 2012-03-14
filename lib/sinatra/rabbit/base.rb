@@ -26,7 +26,6 @@ require_relative './dsl'
 require_relative './param'
 require_relative './base_collection'
 require_relative './validator'
-require_relative './documentation'
 require_relative './features'
 
 module Sinatra

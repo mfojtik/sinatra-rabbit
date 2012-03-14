@@ -38,16 +38,11 @@ module Sinatra
         @collections << current_collection
         Sinatra::Rabbit::DSL.register_collection(current_collection)
         use current_collection
-        use current_collection.documentation unless Rabbit.disabled? :documentation
       end
 
       # Return all defined collections
       #
       def collections
-        @collections
-      end
-
-      def self.collections
         @collections
       end
 
@@ -59,12 +54,6 @@ module Sinatra
         end
         @collections ||= []
         @collections << c
-      end
-
-      module Helper
-        def collections
-          Sinatra::Rabbit::DSL.collections
-        end
       end
 
     end
