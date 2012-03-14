@@ -112,7 +112,22 @@ Tests
 Project include set of minitest files located under 'tests/' directory. You can
 launch them by typing:
 
-    $ ruby tests/*_test.rb
+    $ rake test:all
+
+If you want to run just DSL tests:
+
+    $ rake test:dsl
+
+If you want to test if Sinatra::Base works on your system correctly with Rabbit:
+
+    $ rake test:app
+
+If you want to see code coverage, you must install the *simplecov* gem:
+
+    $ gem install simplecov
+    $ rake coverage
+
+NOTE: The coverage reports are supported only on Ruby 1.9
 
 TODO
 -------
