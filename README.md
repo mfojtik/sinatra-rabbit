@@ -27,19 +27,38 @@ Features
   * `operation :update` is being mapped as 'PUT /:collection/:id'
   * `operation :destroy` is being mapped as 'DELETE /:collection/:id'
 * Use of Sinatra route conditions
-
-
-      operation :stop, :if => driver.support_stop_operation? do
-        description "Stop virtual machine"
-        param :id, :string, :required, "Virtual Machine ID"
-        control do
-          # ...
+<pre>
+    operation :stop, :if => driver.support_stop_operation? do
+     description "Stop virtual machine"
+     param :id, :string, :required, "Virtual Machine ID"
+     control do
+      # ...
+     end
+    end
+</pre>
+* Support operation specific features
+* Support REST subcollections
+<pre>
+    collection :buckets do
+      collection :blobs, :with_id => :bucket_id do
+        description "Blobs are binary objects stored in buckets"
+        
+        # GET /buckets/:bucket_id/blobs/:id
+        operation :show do
+          description "Show content of blob"
+          param :id, :string, :required
+          control { #... }
         end
       end
 
-
-* Support operation specific features
-* Support REST subcollections
+      # GET /buckets/:id
+      operation :show do
+        description "Show content of bucket"
+        param :id, :string, :required
+        control { #... }
+      end
+    end
+</pre>
 * Generate HEAD routes for all operations and collections
 * Generate OPTIONS routes for all operations and collections
   * `OPTIONS /:collection` will return list of all operations (using 'Allow' header)
