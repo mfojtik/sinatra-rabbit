@@ -259,7 +259,7 @@ module Sinatra
       # Create an unique class name for all operations within Collection class
       def self.operation_class(collection_klass, operation_name)
         begin
-          collection_klass.const_get(operation_name.to_s.camelize + 'Operation', Class.new(Operation))
+          collection_klass.const_get(operation_name.to_s.camelize + 'Operation')
         rescue NameError
           collection_klass.const_set(operation_name.to_s.camelize + 'Operation', Class.new(Operation))
         end

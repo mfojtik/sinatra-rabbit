@@ -49,7 +49,7 @@ module Sinatra
       def self.collection_class(name, parent_class=nil)
         klass = parent_class || Sinatra::Rabbit
         begin
-          klass.const_get(name.to_s.camelize + 'Collection', Class.new(Collection))
+          klass.const_get(name.to_s.camelize + 'Collection')
         rescue NameError
           klass.const_set(name.to_s.camelize + 'Collection', Class.new(Collection))
         end
