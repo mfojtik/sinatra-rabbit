@@ -1,101 +1,22 @@
-require 'sinatra/base'
-require 'minitest/autorun'
-require 'pp'
-
-$:.unshift File.join(File::dirname(__FILE__), '..')
-require 'lib/sinatra/rabbit'
-
-class Sample < Sinatra::Base
-  include Sinatra::Rabbit
-
-  collection :sample do
-
-    collection :subsample do
-
-      collection :secondsubsample do
-        description "SecondSubCollection"
-        operation :index do
-          control do
-            status 200
-          end
-        end
-
-      end
-
-      description "Subcollection"
-
-      operation :index do
-        control do
-          status 200
-        end
-      end
-
-      operation :start do
-        control do
-          status 200
-        end
-      end
-    end
-
-    description "Test"
-
-    operation :index do
-      description "TestIndex"
-      param :id, :string, :required, "TestParam"
-      control do
-        status 200
-      end
-    end
-
-    operation :show do
-      description "TestIndex"
-      param :id, :string, :required, "TestParam"
-      control do
-        status 200
-      end
-    end
-
-    operation :create do
-      description "TestIndex"
-      param :id, :string, :required, "TestParam"
-      control do
-        status 200
-      end
-    end
-
-    operation :destroy do
-      description "TestIndex"
-      param :id, :string, :required, "TestParam"
-      control do
-        status 200
-      end
-    end
-
-    operation :stop do
-      description "TestIndex"
-      param :id, :string, :required, "TestParam"
-      control do
-        status 200
-      end
-    end
-
-  end
-
-  collection :second_sample do
-    description "SecondTest"
-
-    operation :index do
-      description "SecondTestIndex"
-      param :second_id, :string, :required, "TestSecondParam"
-      control do
-        status 200
-      end
-    end
-  end
-
-end
-
 describe Sinatra::Rabbit::DSL do
+
+  it "should allow to set configuration" do
+    Sinatra::Rabbit.configure do
+      enable :documentation
+      enable :head_routes
+      enable :options_routes
+      disable :sample_setting
+    end
+    Sinatra::Rabbit.enabled?(:documentation).must_equal true
+    Sinatra::Rabbit.disabled?(:documentation).must_equal false
+    Sinatra::Rabbit.enabled?(:sample_setting).must_equal false
+    Sinatra::Rabbit.disabled?(:sample_setting).must_equal true
+  end
+
+  it "should allow to set any property" do
+    Sinatra::Rabbit.set(:test_property, '1')
+    Sinatra::Rabbit.configuration[:test_property].must_equal '1'
+  end
 
   it "should have collection method" do
     Sample.respond_to?(:collection).must_equal true
@@ -103,6 +24,11 @@ describe Sinatra::Rabbit::DSL do
 
   it "should be Sinatra::Base class" do
     Sample.respond_to?(:configure).must_equal true
+  end
+
+  it "should return list of all collections" do
+    Sample.collections.wont_be_empty
+    Sample.collections.size.must_equal 3
   end
 
 end
@@ -130,6 +56,22 @@ describe Sinatra::Rabbit::Collection do
       end
     end
     Sample.collection(:dynamic).must_equal Sinatra::Rabbit::DynamicCollection
+  end
+
+  it "should raise exception when contain control block" do
+    lambda {
+      Sample.collection(:raise) do
+        description 'RaiseTest'
+        control do
+          status 200
+        end
+      end
+    }.must_raise RuntimeError
+  end
+
+  it "should allow to return base class" do
+    Sample.collection(:second_sample).base_class.must_equal Sample
+    Sample.collection(:sample).collection(:subsample).base_class.must_equal Sample
   end
 
   it "should return correct collection name" do
@@ -165,17 +107,17 @@ describe Sinatra::Rabbit::Collection do
   end
 
   it "should allow to get all operations defined for subcollection" do
-    Sample.collection(:sample).collection(:subsample).operations.must_include Sinatra::Rabbit::SampleCollection::SubsampleCollection::IndexOperation
+    Sample.collection(:sample).collection(:subsample).operations.must_include Sinatra::Rabbit::SampleCollection::SubsampleCollection::ShowOperation
     Sample.collection(:sample).collection(:subsample).operations.must_include Sinatra::Rabbit::SampleCollection::SubsampleCollection::StartOperation
   end
 
   it "should have correct URI set for operations in subcollection" do
-    Sample.collection(:sample).collection(:subsample).operation(:index).full_path.must_equal '/sample/subsample'
-    Sample.collection(:sample).collection(:subsample).operation(:start).full_path.must_equal '/sample/subsample/:id/start'
+    Sample.collection(:sample).collection(:subsample).operation(:show).full_path.must_equal '/sample/:id/subsample/:sub_id'
+    Sample.collection(:sample).collection(:subsample).operation(:start).full_path.must_equal '/sample/:id/subsample/:sub_id/start'
   end
 
   it "should have correct URI set for subcollection" do
-    Sample.collection(:sample).collection(:subsample).full_path.must_equal '/sample/subsample'
+    Sample.collection(:sample).collection(:subsample).full_path.must_equal '/sample/:id/subsample'
   end
 
   it "should allow to have deeper subcollections" do
@@ -238,6 +180,58 @@ describe Sinatra::Rabbit::Collection::Operation do
 
   it "should have correct path for stop operation" do
     Sample.collection(:sample).operation(:stop).full_path.must_equal '/sample/:id/stop'
+  end
+
+end
+
+describe Sinatra::Rabbit::Features do
+  
+  it "should allow to be defined for Sample collection" do
+    Sample.features.wont_be_empty
+    Sample.features.size.must_equal 3
+  end
+
+  it "should allow to be retrieved by name" do
+    Sample.feature(:user_data).wont_be_nil
+    Sample.feature(:user_data).name.must_equal :user_data
+  end
+
+  it "should allow to be defined more times" do
+    Sample.feature(:user_name).wont_be_nil
+    Sample.feature(:user_data).wont_be_nil
+    Sample.feature(:non_existing_one).must_be_nil
+  end
+
+  it "should contain reference to collection" do
+    Sample.feature(:user_data).collection.wont_be_nil
+    Sample.feature(:user_data).collection.must_equal :sample
+  end
+
+  it "should contain array of operations" do
+    Sample.feature(:user_data).operations.wont_be_empty
+    Sample.feature(:user_data).operations.map {|o| o.class }.must_include Sinatra::Rabbit::Feature::Operation
+  end
+
+  it "should allow to return single operation by name" do
+    Sample.feature(:user_data).operation(:index).wont_be_nil
+    Sample.feature(:user_data).operation(:non_existing_one).must_be_nil
+    Sample.feature(:user_data).operation(:index).name.must_equal :index
+  end
+
+  it "should be retrieved from collection" do
+    Sample.collection(:sample).features.wont_be_nil
+    Sample.collection(:sample).features.size.must_equal 2
+    Sample.collection(:second_sample).features.size.must_equal 1
+  end
+
+  it "should add additionals parameters to given operations" do
+    Sample.collection(:sample).operation(:index).params.map { |p| p.name }.must_include :feature_name
+    Sample.collection(:sample).operation(:index).params.map { |p| p.name }.must_include :feature_data
+    Sample.collection(:second_sample).operation(:index).params.map { |p| p.name }.must_include :feature_second
+  end
+
+  it "should not add additional parameters to other operations" do
+    Sample.collection(:sample).operation(:show).params.map { |p| p.name }.wont_include :feature_name
   end
 
 end

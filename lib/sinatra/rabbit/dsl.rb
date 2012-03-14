@@ -32,7 +32,10 @@ module Sinatra
       def collection(name, &block)
         return @collections.find { |c| c.collection_name == name } unless block_given?
         @collections ||= []
-        @collections << (current_collection = BaseCollection.collection_class(name).generate(name, &block))
+        current_collection = BaseCollection.collection_class(name)
+        current_collection.set_base_class(self)
+        current_collection.generate(name, &block)
+        @collections << current_collection
         Sinatra::Rabbit::DSL.register_collection(current_collection)
         use current_collection
         use current_collection.documentation unless Rabbit.disabled? :documentation

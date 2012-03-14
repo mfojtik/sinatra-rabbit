@@ -27,6 +27,7 @@ require_relative './param'
 require_relative './base_collection'
 require_relative './validator'
 require_relative './documentation'
+require_relative './features'
 
 module Sinatra
   module Rabbit
@@ -90,20 +91,23 @@ module Sinatra
         @collection_name = name.to_sym
         @collections ||= []
         @parent_collection = parent_collection
-        send(:head, full_path, {}) { status 200 } unless Rabbit.disabled? :head_routes
         class_eval(&block)
-        op_list = operations
-        send(:options, root_path + route_for(path), {}) do
-          [200, { 'Allow' => op_list.map { |o| o.operation_name }.join(',') }, '']
+        send(:head, full_path, {}) { status 200 } unless Rabbit.disabled? :head_routes
+        send(:options, full_path, {}) do
+          [200, { 'Allow' => operations.map { |o| o.operation_name }.join(',') }, '']
         end unless Rabbit.disabled? :options_routes
         self
       end
 
-      def self.collection(name, &block)
+      def self.collection(name, opts={}, &block)
         unless block_given?
           return @collections.find { |c| c.collection_name == name }
         end
-        @collections << (current_collection = BaseCollection.collection_class(name, self).generate(name, self, &block))
+        current_collection = BaseCollection.collection_class(name, self)
+        current_collection.set_base_class(self.base_class)
+        current_collection.with_id!(opts.delete(:with_id)) if opts.has_key? :with_id
+        current_collection.generate(name, self, &block)
+        @collections << current_collection
       end
 
       def self.parent_routes
@@ -116,18 +120,30 @@ module Sinatra
         route.reverse.join('/')+'/'
       end
 
-      def self.control
+      def self.set_base_class(klass)
+        @klass = klass
+      end
+
+      def self.control(*args)
         raise "The 'control' statement must be used only within context of Operation"
       end
 
+      def self.features
+        return [] unless base_class.respond_to? :features
+        base_class.features.select { |f| f.collection == collection_name }
+      end
+
+      def self.with_id!(id)
+        @with_id = ":#{id}"
+      end
+
       def self.path
-        parent_routes + collection_name.to_s
+        with_id_param = @with_id.nil? ? '' : ':id/' 
+        parent_routes + with_id_param + collection_name.to_s
       end
 
-      def self.full_path
-        root_path + route_for(path)
-      end
-
+      def self.base_class;@klass;end
+      def self.full_path;root_path + route_for(path);end
       def self.collection_name; @collection_name; end
       def self.parent_collection; @parent_collection; end
       def self.collections; @collections; end
@@ -143,24 +159,39 @@ module Sinatra
 
       def self.operation(operation_name, opts={}, &block)
         @operations ||= []
+        # Return operation when no block is given
         return @operations.find { |o| o.operation_name == operation_name } unless block_given?
+
+        # Check if current operation is not already registred
         if operation_registred?(operation_name)
           raise "Operation #{operation_name} already registered in #{self.name} collection"
         end
+
+        # Create operation class
         @operations << (operation = operation_class(self, operation_name).generate(self, operation_name, &block))
+
+        # Generate HEAD routes
         unless Rabbit.disabled? :head_routes
           send(:head, root_path + route_for(path, operation_name, {})) { status 200 }
         end
+
+        # Add route conditions if defined
         if opts.has_key? :if
-          send(:set, :if_true) do |value|
+          base_class.send(:set, :if_true) do |value|
             condition do
               (value.kind_of?(Proc) ? value.call : value) == true
             end
           end
           opts[:if_true] = opts.delete(:if)
         end
-        operation.set_route(root_path + route_for(path, operation_name))
-        send(http_method_for(operation_name), operation.full_path, opts, &operation.control)
+
+        # Make the full_path method on operation return currect operation path
+        operation.set_route(root_path + route_for(path, operation_name, :id_name => @with_id || ':id'))
+
+        # Define Sinatra::Base route
+        base_class.send(http_method_for(operation_name), operation.full_path, opts, &operation.control)
+
+        # Generate OPTIONS routes
         unless Rabbit.disabled? :options_routes
           send(:options, root_path + route_for(path, operation_name, :member), {}) do
             [200, { 'Allow' => operation.params.map { |p| p.to_s }.join(',') }, '']
@@ -178,7 +209,12 @@ module Sinatra
         end
 
         def self.generate(collection, name, &block)
-          @name, @params = name, []
+          @name, @params, @collection = name, [], collection
+          @collection.features.select { |f| f.operations.map { |o| o.name}.include?(@name) }.each do |feature|
+            feature.operations.each do |o|
+              instance_eval(&o.params)
+            end
+          end
           class_eval(&block)
           self
         end

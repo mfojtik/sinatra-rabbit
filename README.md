@@ -60,7 +60,7 @@ TODO
 Add possibility to specify per-operation features
 
     Sinatra::Rabbit.features do
-     define_feature :user_name, :for => :instances do
+     feature :user_name, :for => :instances do
        operation :create do
          param :name, :string
        end

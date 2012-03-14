@@ -34,7 +34,7 @@ module Sinatra
           end
           operation_path = (o && o[:member]) ? operation_name.to_s : nil
           operation_path = operation_name.to_s unless o
-          id_param = (o && o[:collection]) ? nil : ":id"
+          id_param = (o && o[:collection]) ? nil : (member.kind_of?(Hash) ? member[:id_name] : ':id')
           [route_for(collection), id_param, operation_path].compact.join('/')
         else
           collection.to_s
