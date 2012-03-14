@@ -29,13 +29,13 @@ Features
 * Use of Sinatra route conditions
 
 
-    operation :stop, :if => driver.support_stop_operation? do
-      description "Stop virtual machine"
-      param :id, :string, :required, "Virtual Machine ID"
-      control do
-        # ...
+      operation :stop, :if => driver.support_stop_operation? do
+        description "Stop virtual machine"
+        param :id, :string, :required, "Virtual Machine ID"
+        control do
+          # ...
+        end
       end
-    end
 
 
 * Support operation specific features
