@@ -51,6 +51,11 @@ module Sinatra
         :member => false,
         :method => :get,
         :collection => true
+      },
+      :update => {
+        :member => false,
+        :method => :patch,
+        :required_params => [ :id ] 
       }
     }
 
