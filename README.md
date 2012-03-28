@@ -19,6 +19,9 @@ as well as in Deltacloud.
 
 Full documentation: [rubydoc.info/github/mifo/sinatra-rabbit](http://rubydoc.info/github/mifo/sinatra-rabbit/master)
 
+An example application (modular Deltacloud API) can be found here:
+[github.com/mifo/deltacloud-modular](https://github.com/mifo/deltacloud-modular)
+
 Features
 -------
 
