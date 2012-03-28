@@ -63,7 +63,6 @@ class Sample < Sinatra::Base
         end
       end
       operation :show do
-        param :id, :required
         control do
           params[:id]
         end
@@ -94,7 +93,6 @@ class Sample < Sinatra::Base
 
     operation :show do
       description "TestIndex"
-      param :id, :string, :required, "TestParam"
       control do
         [200, {}, params[:id]]
       end
@@ -111,7 +109,6 @@ class Sample < Sinatra::Base
 
     operation :destroy do
       description "TestIndex"
-      param :id, :string, :required, "TestParam"
       control do
         status 201
       end
