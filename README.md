@@ -1,3 +1,5 @@
+[![Build Status](https://secure.travis-ci.org/mifo/sinatra-rabbit.png?branch=master)](http://travis-ci.org/mifo/sinatra-rabbit)
+
 Sinatra::Rabbit
 =============
 
