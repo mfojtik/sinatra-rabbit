@@ -32,10 +32,26 @@ module Sinatra
   module Rabbit
 
     STANDARD_OPERATIONS = {
-      :create => { :member => false, :method => :post, :collection => true },
-      :show => { :member => false, :method => :get },
-      :destroy => { :member => false, :method => :delete },
-      :index => { :member => false, :method => :get, :collection => true }
+      :create => {
+        :member => false,
+        :method => :post,
+        :collection => true
+      },
+      :show => {
+        :member => false,
+        :method => :get,
+        :required_params => [ :id ]
+      },
+      :destroy => {
+        :member => false,
+        :method => :delete,
+        :required_params => [ :id ]
+      },
+      :index => {
+        :member => false,
+        :method => :get,
+        :collection => true
+      }
     }
 
     def self.configure(&block)
@@ -214,7 +230,14 @@ module Sinatra
               instance_eval(&o.params)
             end
           end
+          if Sinatra::Rabbit::STANDARD_OPERATIONS.has_key? name
+            required_params = Sinatra::Rabbit::STANDARD_OPERATIONS[name][:required_params]
+            required_params.each do |p|
+              param p, :required, :string, "The #{p} parameter"
+            end unless required_params.nil?
+          end
           class_eval(&block)
+          description "#{name.to_s.capitalize} operation on #{@collection.name} collection" if description.nil?
           self
         end
 
