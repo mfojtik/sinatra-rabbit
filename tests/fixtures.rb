@@ -10,14 +10,6 @@ end
 
 require 'minitest/autorun'
 
-begin
-  require 'purdytest'
-  Purdytest.configure do |io|
-    io.pass = :blue
-  end
-rescue LoadError
-end
-
 require 'sinatra/base'
 $:.unshift File.join(File::dirname(__FILE__), '..')
 require 'lib/sinatra/rabbit'
