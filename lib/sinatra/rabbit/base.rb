@@ -209,7 +209,7 @@ module Sinatra
         operation.set_route(root_path + route_for(path, operation_name, :id_name => @with_id || ':id'))
 
         # Define Sinatra::Base route
-        base_class.send(http_method_for(operation_name), operation.full_path, opts, &operation.control)
+        base_class.send(operation.http_method || http_method_for(operation_name), operation.full_path, opts, &operation.control)
 
         # Generate OPTIONS routes
         unless Rabbit.disabled? :options_routes
@@ -226,6 +226,10 @@ module Sinatra
 
         def self.set_route(path)
           @operation_path = path
+        end
+
+        def self.http_method(method=nil)
+          @method ||= method
         end
 
         def self.generate(collection, name, &block)
