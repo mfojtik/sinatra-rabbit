@@ -177,6 +177,7 @@ module Sinatra
         Rabbit::Documentation.for_collection(self, operations)
       end
 
+
       def self.operation(operation_name, opts={}, &block)
         @operations ||= []
         # Return operation when no block is given
@@ -188,7 +189,8 @@ module Sinatra
         end
 
         # Create operation class
-        @operations << (operation = operation_class(self, operation_name).generate(self, operation_name, &block))
+        operation = operation_class(self, operation_name).generate(self, operation_name, &block)
+        @operations << operation
 
         # Generate HEAD routes
         unless Rabbit.disabled? :head_routes
@@ -208,6 +210,11 @@ module Sinatra
         # Make the full_path method on operation return currect operation path
         operation.set_route(root_path + route_for(path, operation_name, :id_name => @with_id || ':id'))
 
+        # Change the HTTP method to POST automatically for 'action' operations
+        if opts[:http_method]
+          operation.http_method(opts.delete(:http_method))
+        end
+
         # Define Sinatra::Base route
         base_class.send(operation.http_method || http_method_for(operation_name), operation.full_path, opts, &operation.control)
 
@@ -220,6 +227,11 @@ module Sinatra
         self
       end
 
+      def self.action(action_name, opts={}, &block)
+        opts.merge!(:http_method => :post)
+        operation(action_name, opts, &block)
+      end
+
       def self.operations; @operations; end
 
       class Operation
@@ -229,7 +241,7 @@ module Sinatra
         end
 
         def self.http_method(method=nil)
-          @method ||= method
+          @method ||= method || BaseCollection.http_method_for(@name)
         end
 
         def self.generate(collection, name, &block)

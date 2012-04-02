@@ -127,6 +127,14 @@ class Sample < Sinatra::Base
   collection :second_sample do
     description "SecondTest"
 
+    action :restart do
+      description "Action operation"
+      param :id, :string, :required, "Test"
+      control do
+        status 200
+      end
+    end
+
     operation :index do
       description "SecondTestIndex"
       param :second_id, :string, :required, "TestSecondParam"
