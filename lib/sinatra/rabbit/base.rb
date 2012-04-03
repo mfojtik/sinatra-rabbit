@@ -189,7 +189,7 @@ module Sinatra
         end
 
         # Create operation class
-        operation = operation_class(self, operation_name).generate(self, operation_name, &block)
+        operation = operation_class(self, operation_name).generate(self, operation_name, opts, &block)
         @operations << operation
 
         # Generate HEAD routes
@@ -215,15 +215,8 @@ module Sinatra
           operation.http_method(opts.delete(:http_method))
         end
 
-        control_block = operation.control
-        if Sinatra::Rabbit.configuration[:check_capability] and opts.has_key?(:with_capability)
-          unless Sinatra::Rabbit.configuration[:check_capability].call(opts.delete(:with_capability))
-            control_block = Proc.new { [412, {}, "Required capability is missing for current resource and configuration"] }
-          end
-        end
-
         # Define Sinatra::Base route
-        base_class.send(operation.http_method || http_method_for(operation_name), operation.full_path, opts, &control_block)
+        base_class.send(operation.http_method || http_method_for(operation_name), operation.full_path, opts, &operation.control)
 
         # Generate OPTIONS routes
         unless Rabbit.disabled? :options_routes
@@ -251,8 +244,9 @@ module Sinatra
           @method ||= method || BaseCollection.http_method_for(@name)
         end
 
-        def self.generate(collection, name, &block)
+        def self.generate(collection, name, opts={}, &block)
           @name, @params, @collection = name, [], collection
+          @options = opts
           @collection.features.select { |f| f.operations.map { |o| o.name}.include?(@name) }.each do |feature|
             feature.operations.each do |o|
               instance_eval(&o.params)
@@ -279,6 +273,11 @@ module Sinatra
 
         def self.control(&block)
           params_def = @params
+          if Sinatra::Rabbit.configuration[:check_capability] and @options.has_key?(:with_capability)
+            unless Sinatra::Rabbit.configuration[:check_capability].call(@options.delete(:with_capability))
+              @control = Proc.new { [412, {}, "Required capability is missing for current resource and configuration"] }
+            end
+          end
           @control ||= Proc.new do
             begin
               Rabbit::Validator.validate!(params, params_def)
