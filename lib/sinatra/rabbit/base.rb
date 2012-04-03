@@ -64,27 +64,27 @@ module Sinatra
     end
 
     def self.configuration
-      @configuration || {}
+      Thread.current[:rabbit_configuration] ||= {}
     end
 
     def self.enable(property)
-      @configuration[property] = true
+      configuration[property] = true
     end
 
     def self.enabled?(property)
-      !@configuration[property].nil? and @configuration[property] == true
+      !configuration[property].nil? and configuration[property] == true
     end
 
     def self.disabled?(property)
-      !@configuration[property].nil? and @configuration[property] == false
+      !configuration[property].nil? and configuration[property] == false
     end
 
     def self.disable(property)
-      @configuration[property] = false
+      configuration[property] = false
     end
 
     def self.set(property, value)
-      @configuration[property] = value
+      configuration[property] = value
     end
 
     # Automatically register the DSL to Sinatra::Base if this
@@ -97,9 +97,7 @@ module Sinatra
     #     end
     #
     def self.included(base)
-      @configuration ||= {
-        :root_path => '/'
-      }
+      configuration[:root_path] = '/'
       base.register(DSL)
     end
 
@@ -248,6 +246,9 @@ module Sinatra
           @name, @params, @collection = name, [], collection
           @options = opts
           @collection.features.select { |f| f.operations.map { |o| o.name}.include?(@name) }.each do |feature|
+            if Sinatra::Rabbit.configuration[:check_features]
+              next unless Sinatra::Rabbit.configuration[:check_features].call(collection.collection_name, feature.name)
+            end
             feature.operations.each do |o|
               instance_eval(&o.params)
             end

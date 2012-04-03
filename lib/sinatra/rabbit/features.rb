@@ -18,6 +18,7 @@ module Sinatra
   module Rabbit
     class Feature
       attr_reader :name
+      attr_reader :description
       attr_reader :collection
       attr_reader :operations
 
@@ -32,6 +33,10 @@ module Sinatra
       def operation(name, &block)
         @operations << Operation.new(name, &block) if block_given?
         @operations.find { |o| o.name == name }
+      end
+
+      def description(s=nil)
+        @description ||= s
       end
 
       class Operation
