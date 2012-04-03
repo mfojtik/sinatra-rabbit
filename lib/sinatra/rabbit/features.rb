@@ -21,11 +21,13 @@ module Sinatra
       attr_reader :description
       attr_reader :collection
       attr_reader :operations
+      attr_reader :constraints
 
       def initialize(name, opts={}, &block)
         @name = name
         @operations = []
         @collection = opts[:for]
+        @constraints = {}
         raise "Each feature must define collection for which it will be valid using :for parameter" unless @collection
         instance_eval(&block) if block_given?
       end
@@ -37,6 +39,10 @@ module Sinatra
 
       def description(s=nil)
         @description ||= s
+      end
+
+      def constraint(name, value)
+        @constraints[name] = value
       end
 
       class Operation
@@ -54,14 +60,20 @@ module Sinatra
     module Features
 
       def features(&block)
-        @@features ||= []
+        @features ||= []
         instance_eval(&block) if block_given?
-        @@features
+        @features
       end
 
       def feature(name, opts={}, &block)
-        @@features << Feature.new(name, opts, &block) if block_given?
-        @@features.find { |f| f.name == name }
+        feature = @features.find { |f| f.name == name }
+        return feature unless block_given?
+        if feature
+          feature.class_eval(&block)
+        else
+          @features << Feature.new(name, opts, &block) if block_given?
+        end
+        @features.find { |f| f.name == name }
       end
 
       def self.included(base)
