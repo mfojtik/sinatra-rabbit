@@ -151,6 +151,10 @@ module Sinatra
         base_class.features.select { |f| f.collection == collection_name }
       end
 
+      def self.feature(name)
+        features.find { |f| f.name == name }
+      end
+
       def self.with_id!(id)
         @with_id = ":#{id}"
       end
