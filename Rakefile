@@ -30,3 +30,11 @@ task :coverage do
   ENV["COVERAGE"] = "true"
   Rake::Task["test:all"].execute
 end
+
+desc "Reinstall gem"
+task :reinstall do
+  puts %x{rm -rf sinatra-rabbit-*.gem}
+  puts %x{gem uninstall sinatra-rabbit --all -I -x}
+  puts %x{gem build sinatra-rabbit.gemspec}
+  puts %x{gem install sinatra-rabbit-*.gem --local}
+end
