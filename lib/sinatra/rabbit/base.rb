@@ -230,7 +230,7 @@ module Sinatra
       end
 
       def self.action(action_name, opts={}, &block)
-        opts.merge!(:http_method => :post)
+        opts.merge!(:http_method => :post) unless opts[:http_method]
         operation(action_name, opts, &block)
       end
 
@@ -249,6 +249,7 @@ module Sinatra
         def self.generate(collection, name, opts={}, &block)
           @name, @params, @collection = name, [], collection
           @options = opts
+          http_method(@options.delete(:http_method)) if @options.has_key? :http_method
           @collection.features.select { |f| f.operations.map { |o| o.name}.include?(@name) }.each do |feature|
             if Sinatra::Rabbit.configuration[:check_features]
               next unless Sinatra::Rabbit.configuration[:check_features].call(collection.collection_name, feature.name)
