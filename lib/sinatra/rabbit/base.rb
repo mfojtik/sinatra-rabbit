@@ -215,8 +215,15 @@ module Sinatra
           operation.http_method(opts.delete(:http_method))
         end
 
+        control_block = operation.control
+        if Sinatra::Rabbit.configuration[:check_capability] and opts.has_key?(:with_capability)
+          unless Sinatra::Rabbit.configuration[:check_capability].call(opts.delete(:with_capability))
+            control_block = Proc.new { [412, {}, "Required capability is missing for current resource and configuration"] }
+          end
+        end
+
         # Define Sinatra::Base route
-        base_class.send(operation.http_method || http_method_for(operation_name), operation.full_path, opts, &operation.control)
+        base_class.send(operation.http_method || http_method_for(operation_name), operation.full_path, opts, &control_block)
 
         # Generate OPTIONS routes
         unless Rabbit.disabled? :options_routes
