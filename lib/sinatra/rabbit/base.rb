@@ -165,8 +165,8 @@ module Sinatra
       end
 
       def self.path
-        with_id_param = @with_id.nil? ? '' : ':id/' 
-        parent_routes + with_id_param + ((@no_member) ? '' : collection_name.to_s)
+        with_id_param = @with_id.nil? ? '' : ':id' + (@no_member ? '' : '/')
+        parent_routes + with_id_param + ((@no_member) ? '' :  collection_name.to_s)
       end
 
       def self.base_class;@klass;end
