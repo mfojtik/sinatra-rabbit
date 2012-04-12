@@ -60,8 +60,9 @@ module Sinatra
     module Features
 
       def features(&block)
+        return @features || [] unless block_given?
         @features ||= []
-        instance_eval(&block) if block_given?
+        instance_eval(&block)
         @features
       end
 
