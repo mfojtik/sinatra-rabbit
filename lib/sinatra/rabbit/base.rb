@@ -124,6 +124,7 @@ module Sinatra
         current_collection = BaseCollection.collection_class(name, self)
         current_collection.set_base_class(self.base_class)
         current_collection.with_id!(opts.delete(:with_id)) if opts.has_key? :with_id
+        current_collection.no_member! if opts.has_key? :no_member
         current_collection.generate(name, self, &block)
         @collections << current_collection
       end
@@ -159,9 +160,13 @@ module Sinatra
         @with_id = ":#{id}"
       end
 
+      def self.no_member!
+        @no_member = true
+      end
+
       def self.path
         with_id_param = @with_id.nil? ? '' : ':id/' 
-        parent_routes + with_id_param + collection_name.to_s
+        parent_routes + with_id_param + ((@no_member) ? '' : collection_name.to_s)
       end
 
       def self.base_class;@klass;end
