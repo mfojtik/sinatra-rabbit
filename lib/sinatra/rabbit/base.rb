@@ -218,7 +218,9 @@ module Sinatra
         end
 
         # Define Sinatra::Base route
-        base_class.send(operation.http_method || http_method_for(operation_name), operation.full_path, opts, &operation.control)
+        route_options = opts.clone
+        route_options.delete :with_capability
+        base_class.send(operation.http_method || http_method_for(operation_name), operation.full_path, route_options, &operation.control)
 
         # Generate OPTIONS routes
         unless Rabbit.disabled? :options_routes
@@ -272,6 +274,15 @@ module Sinatra
         def self.full_path; @operation_path; end
         def self.operation_name; @name; end
 
+        def self.has_capability?
+          @capability ||= Sinatra::Rabbit.configuration[:check_capability]
+          if @capability and @options.has_key?(:with_capability)
+            @capability.call(@options[:with_capability])
+          else
+            true
+          end
+        end
+
         def self.description(text=nil)
           return @description if text.nil?
           @description = text
@@ -279,22 +290,21 @@ module Sinatra
 
         def self.control(&block)
           params_def = @params
-          if Sinatra::Rabbit.configuration[:check_capability] and @options.has_key?(:with_capability)
-            unless Sinatra::Rabbit.configuration[:check_capability].call(@options.delete(:with_capability))
-              @control = Proc.new { [412, {}, "Required capability is missing for current resource and configuration"] }
-            end
-          end
-          @control ||= Proc.new do
-            begin
-              Rabbit::Validator.validate!(params, params_def)
-            rescue => e
-              if e.kind_of? Rabbit::Validator::ValidationError
-                halt e.http_status_code, e.message
-              else
-                raise e
+          if not has_capability?
+            @control = Proc.new { [412, {}, "The required capability to execute this operation is missing"] }
+          else
+            @control ||= Proc.new do
+              begin
+                Rabbit::Validator.validate!(params, params_def)
+              rescue => e
+                if e.kind_of? Rabbit::Validator::ValidationError
+                  halt e.http_status_code, e.message
+                else
+                  raise e
+                end
               end
+              instance_eval(&block)
             end
-            instance_eval(&block)
           end
         end
 
