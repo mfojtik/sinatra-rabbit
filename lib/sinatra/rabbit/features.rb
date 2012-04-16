@@ -54,6 +54,16 @@ module Sinatra
           @params = block
         end
 
+        def params_array
+          @p_arr = []
+          instance_eval(&self.params)
+          @p_arr
+        end
+
+        def param(*args)
+          @p_arr << Rabbit::Param.new(*args)
+        end
+
       end
     end
 
@@ -78,7 +88,7 @@ module Sinatra
       end
 
       def self.included(base)
-        base.register(Features)
+        base.register(Features) if base.respond_to? :register
       end
 
     end
