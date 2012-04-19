@@ -5,12 +5,15 @@ Sinatra::Rabbit
 
 Sinatra::Rabbit is a [Sinatra](http://www.sinatrarb.com) extensions that
 makes designing a [REST API](http://en.wikipedia.org/wiki/Representational_State_Transfer)
-much easier.
+much easier and more fun.
 
-Rabbit treats REST resource as 'collection'. Every collection then
-could have multiple operations. This simple DSL is then transformed into
-a proper modular [Sinatra::Base](http://www.sinatrarb.com/intro#Serving%20a%20Modular%20Application) 
-application that can be launched within any [Rack](http://rack.rubyforge.org/) container (including Rails).
+Rabbit maps REST resources to 'collections'. Every collection then could define
+CRUD and other operations to manipulate with resource. Rabbit will handle
+parameter validation and capability checks for you, so you can focus on the
+structure of REST API.
+
+Once your REST API is designed, Rabbit will make it available as modular Sinatra
+application thus mountable to any Rack compatible container (Rails, Padrino...)
 
 Original Rabbit idea has been taken from the [Deltacloud API](http://deltacloud.org)
 project. However this is an complete rewrite of the original Deltacloud Rabbit.
@@ -25,54 +28,59 @@ An example application (modular Deltacloud API) can be found here:
 Features
 -------
 
-* Automatically generate proper path and use right HTTP method for all CRUD operations:
+* Automatically generate proper path and use the right HTTP method for all CRUD operations:
   * `operation :create` is being mapped as 'POST /:collection'
   * `operation :index` is being mapped as 'GET /:collection'
   * `operation :show` is being mapped as 'GET /:collection/:id'
-  * `operation :update` is being mapped as 'PUT /:collection/:id'
+  * `operation :update` is being mapped as 'PATCH /:collection/:id'
   * `operation :destroy` is being mapped as 'DELETE /:collection/:id'
   * `action :reboot` is being mapped as 'POST /:collection/:id/reboot'
-* Use of Sinatra route conditions
+* Automatically set the :id parameter for routes like :show or :destroy
+* Automatically validates the request parameter values
+* Allow to change the HTTP method (`action :reboot, :http_method => :post`)
+* Allow to check if operation is supported by the current resource
 <pre>
   <code>
-    action :stop, :with_capability => :stop_operation do
-     description "Stop virtual machine"
-     control do
-      # ...
-     end
+    check_capability :for => lambda { |m| driver.respond_to? m }
+
+    collection :vms do
+      action :stop, :with_capability => :stop do
+        control do
+          # ...
+        end
+      end
     end
   </code>
 </pre>
-* Support operation specific features
-* Support REST subcollections
+* Allow to define groups of parameters as features and make them available if
+  the current resource support them
+* Support the 'sub-collections' that might be defined on resouce
 <pre>
   <code>
     collection :buckets do
       collection :blobs, :with_id => :bucket_id do
-        description "Blobs are binary objects stored in buckets"
-        
+
         # GET /buckets/:bucket_id/blobs/:id
         operation :show do
-          description "Show content of blob"
-          param :id, :string, :required
           control { #... }
         end
       end
 
       # GET /buckets/:id
       operation :show do
-        description "Show content of bucket"
-        param :id, :string, :required
         control { #... }
       end
     end
   </code>
 </pre>
-* Generate HEAD routes for all operations and collections
+* Generate HEAD routes for all operations and collections to check if the route
+  is available
 * Generate OPTIONS routes for all operations and collections
   * `OPTIONS /:collection` will return list of all operations (using 'Allow' header)
   * `OPTIONS /:collection/:operation` will return list of parameters defined for given operation (using 'Allow' header)
-* Include bunch of tests to prove it work correctly
+* Allow to manipulate with the REST structure programmatically, to generate
+  documentation or collect statistics
+* Include bunch of tests to prove it all works correctly
 
 Configuration
 -------
