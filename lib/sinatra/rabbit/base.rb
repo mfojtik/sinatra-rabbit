@@ -14,14 +14,6 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-unless Kernel.respond_to?(:require_relative)
-  module Kernel
-    def require_relative(path)
-      require File.join(File.dirname(caller[0]), path.to_str)
-    end
-  end
-end
-
 require_relative './dsl'
 require_relative './param'
 require_relative './base_collection'
@@ -109,29 +101,42 @@ module Sinatra
         @collection_name = name.to_sym
         @parent_collection = parent_collection
         class_eval(&block)
-        send(:head, full_path, {}) { status 200 } unless Rabbit.disabled? :head_routes
-        send(:options, full_path, {}) do
-          [200, { 'Allow' => operations.map { |o| o.operation_name }.join(',') }, '']
-        end unless Rabbit.disabled? :options_routes
+        generate_head_route if not Rabbit.disabled? :head_routes
+        generate_option_route if not Rabbit.disabled? :options_routes
         self
       end
 
-      def self.collection(name, opts={}, &block)
-        unless block_given?
-          return collections.find { |c| c.collection_name == name }
+      def self.generate_option_route
+        options full_path do
+          header 'Allow' => operations.map { |o| o.operation_name }.join(',')
+          status 200
         end
-        current_collection = BaseCollection.collection_class(name, self) do |c|
+      end
+
+      def self.generate_head_route
+        head full_path do
+          status 200
+        end
+      end
+
+      # Define new collection using the name
+      #
+      # opts[:with_id]  Define :id used if the collection is a subcollection
+      #
+      def self.collection(name, opts={}, &block)
+        return collections.find { |c| c.collection_name == name } if not block_given?
+        new_collection = BaseCollection.collection_class(name, self) do |c|
           c.base_class = self.base_class
-          c.with_id!(opts.delete(:with_id)) if opts.has_key? :with_id
-          c.no_member! if opts.has_key? :no_member
+          c.with_id!(opts.delete(:with_id)) if opts.has_key?(:with_id)
+          c.no_member! if opts.has_key?(:no_member)
           c.generate(name, self, &block)
         end
-        collections << current_collection
+        collections << new_collection
       end
 
       def self.parent_routes
         return '' if @parent_collection.nil?
-        route = ["#{@parent_collection.collection_name}"]
+        route = [ @parent_collection.collection_name.to_s ]
         current_parent = @parent_collection
         while current_parent = current_parent.parent_collection
           route << current_parent.collection_name
@@ -169,12 +174,23 @@ module Sinatra
         parent_routes + with_id_param + ((@no_member) ? '' :  collection_name.to_s)
       end
 
-      def self.base_class;@klass;end
-      def self.full_path;root_path + route_for(path);end
+      def self.base_class
+        @klass
+      end
+
       def self.collection_name; @collection_name; end
       def self.parent_collection; @parent_collection; end
+
+      def self.subcollection?
+        !parent_collection.nil?
+      end
+
       def self.collections
         @collections ||= []
+      end
+
+      def self.full_path
+        root_path + route_for(path)
       end
 
       def self.description(text=nil)
@@ -182,19 +198,13 @@ module Sinatra
         @description = text
       end
 
-      def self.documentation
-        Rabbit::Documentation.for_collection(self, operations)
-      end
-
       def self.[](obj_id)
         collections.find { |c| c.collection_name == obj_id } || operation(obj_id)
       end
 
-
       def self.operation(operation_name, opts={}, &block)
-        @operations ||= []
         # Return operation when no block is given
-        return @operations.find { |o| o.operation_name == operation_name } unless block_given?
+        return operations.find { |o| o.operation_name == operation_name } unless block_given?
 
         # Check if current operation is not already registred
         if operation_registred?(operation_name)
@@ -202,13 +212,8 @@ module Sinatra
         end
 
         # Create operation class
-        operation = operation_class(self, operation_name).generate(self, operation_name, opts, &block)
-        @operations << operation
-
-        # Generate HEAD routes
-        unless Rabbit.disabled? :head_routes
-          send(:head, root_path + route_for(path, operation_name, {})) { status 200 }
-        end
+        new_operation = operation_class(self, operation_name).generate(self, operation_name, opts, &block)
+        operations << new_operation
 
         # Add route conditions if defined
         if opts.has_key? :if
@@ -221,24 +226,21 @@ module Sinatra
         end
 
         # Make the full_path method on operation return currect operation path
-        operation.set_route(root_path + route_for(path, operation_name, :id_name => @with_id || ':id'))
+        new_operation.route = root_path + route_for(path, operation_name, :id_name => @with_id || ':id')
 
         # Change the HTTP method to POST automatically for 'action' operations
-        if opts[:http_method]
-          operation.http_method(opts.delete(:http_method))
-        end
+        new_operation.http_method = opts.delete(:http_method) if opts[:http_method]
 
-        # Define Sinatra::Base route
+        # Remove :with_capability from Sinatra route options
         route_options = opts.clone
         route_options.delete :with_capability
-        base_class.send(operation.http_method || http_method_for(operation_name), operation.full_path, route_options, &operation.control)
 
-        # Generate OPTIONS routes
-        unless Rabbit.disabled? :options_routes
-          send(:options, root_path + route_for(path, operation_name, :member), {}) do
-            [200, { 'Allow' => operation.params.map { |p| p.to_s }.join(',') }, '']
-          end
-        end
+        # Define Sinatra route and generate OPTIONS route if enabled
+        base_class.send(new_operation.http_method || http_method_for(operation_name), new_operation.full_path, route_options, &new_operation.control)
+
+        new_operation.generate_option_route(root_path + route_for(path, operation_name, :no_id_and_member)) unless Rabbit.disabled?(:options_routes)
+        new_operation.generate_head_route(root_path + route_for(path, operation_name, :member)) unless Rabbit.disabled?(:head_routes)
+
         self
       end
 
@@ -247,23 +249,47 @@ module Sinatra
         operation(action_name, opts, &block)
       end
 
-      def self.operations; @operations; end
+      def self.operations
+        @operations ||= []
+      end
 
       class Operation
 
-        def self.set_route(path)
+        def self.route=(path)
           @operation_path = path
         end
 
-        def self.http_method(method=nil)
-          @method ||= method || BaseCollection.http_method_for(@name)
+        def self.http_method
+          @method ||= BaseCollection.http_method_for(@name)
+        end
+
+        def self.http_method=(method)
+          @method = method
+        end
+
+        def self.generate_head_route(path)
+          @collection.base_class.head path do
+            status 200
+          end
+        end
+
+        def self.generate_option_route(path)
+          operation_params = params.map { |p| p.to_s }.join(',')
+          @collection.base_class.options path do
+            headers 'Allow' => operation_params
+            status 200
+          end
         end
 
         def self.generate(collection, name, opts={}, &block)
           @name, @params, @collection = name, [], collection
           @options = opts
-          http_method(@options.delete(:http_method)) if @options.has_key? :http_method
-          @collection.features.select { |f| f.operations.map { |o| o.name}.include?(@name) }.each do |feature|
+
+          if @options.has_key?(:http_method)
+            @method = @options.delete(:http_method)
+          end
+
+          @collection.features.select { |f| f.operations.map { |o| o.name}.include?(operation_name) }.each do |feature|
             if Sinatra::Rabbit.configuration[:check_features]
               next unless Sinatra::Rabbit.configuration[:check_features].call(collection.collection_name, feature.name)
             end
@@ -271,6 +297,7 @@ module Sinatra
               instance_eval(&o.params)
             end
           end
+
           if Sinatra::Rabbit::STANDARD_OPERATIONS.has_key? name
             required_params = Sinatra::Rabbit::STANDARD_OPERATIONS[name][:required_params]
             required_params.each do |p|
@@ -295,14 +322,13 @@ module Sinatra
         end
 
         def self.description(text=nil)
-          return @description if text.nil?
-          @description = text
+          @description ||= text
         end
 
         def self.control(&block)
           params_def = @params
           if not has_capability?
-            @control = Proc.new { [412, {}, "The required capability to execute this operation is missing"] }
+            @control = Proc.new { [412, { 'Expect' => @options[:with_capability]}, "The required capability to execute this operation is missing"] }
           else
             @control ||= Proc.new do
               begin
@@ -330,7 +356,7 @@ module Sinatra
       private
 
       def self.operation_registred?(name)
-        @operations.any? { |o| o.name == name }
+        operations.any? { |o| o.name == name }
       end
 
       # Create an unique class name for all operations within Collection class

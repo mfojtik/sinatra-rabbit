@@ -26,14 +26,14 @@ describe Sample do
     get '/sample', { :id => :sample }
     status.must_equal 200
   end
-  
+
   it "should respond 200 to HEAD request for index operation in sample collection" do
     head '/sample'
     status.must_equal 200
   end
 
   it "should respond to OPTIONS request for index operation in sample collection" do
-    options '/sample'
+    options '/sample/index'
     status.must_equal 200
     allow_header = last_response.headers['Allow'].split(',')
     allow_header.wont_be_empty

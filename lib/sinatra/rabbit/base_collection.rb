@@ -25,6 +25,7 @@ module Sinatra
         if operation_name
           o = Sinatra::Rabbit::STANDARD_OPERATIONS[operation_name]
           if o
+            o = o.clone
             o[:member] = false if member == :no_member
             o[:collection] = true if member == :no_id
             if member == :no_id_and_member

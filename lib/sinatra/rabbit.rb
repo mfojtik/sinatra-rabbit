@@ -22,11 +22,18 @@ unless "".respond_to? :camelize
   end
 end
 
+unless Kernel.respond_to?(:require_relative)
+  module Kernel
+    def require_relative(path)
+      require File.join(File.dirname(caller[0]), path.to_str)
+    end
+  end
+end
+
 class << Sinatra::Base
   def options(path, opts={}, &bk)
     route 'OPTIONS', path, opts, &bk
   end
 end
 
-$:.unshift File.join(File::dirname(__FILE__), '.')
-require 'rabbit/base'
+require_relative './rabbit/base'
