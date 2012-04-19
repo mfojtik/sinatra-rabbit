@@ -98,7 +98,7 @@ module Sinatra
     #
     def self.included(base)
       configuration[:root_path] = '/'
-      base.register(DSL)
+      base.register(DSL) if base.respond_to? :register
     end
 
     class Collection < BaseCollection
@@ -107,7 +107,6 @@ module Sinatra
 
       def self.generate(name, parent_collection=nil, &block)
         @collection_name = name.to_sym
-        @collections ||= []
         @parent_collection = parent_collection
         class_eval(&block)
         send(:head, full_path, {}) { status 200 } unless Rabbit.disabled? :head_routes
@@ -119,14 +118,15 @@ module Sinatra
 
       def self.collection(name, opts={}, &block)
         unless block_given?
-          return @collections.find { |c| c.collection_name == name }
+          return collections.find { |c| c.collection_name == name }
         end
-        current_collection = BaseCollection.collection_class(name, self)
-        current_collection.set_base_class(self.base_class)
-        current_collection.with_id!(opts.delete(:with_id)) if opts.has_key? :with_id
-        current_collection.no_member! if opts.has_key? :no_member
-        current_collection.generate(name, self, &block)
-        @collections << current_collection
+        current_collection = BaseCollection.collection_class(name, self) do |c|
+          c.base_class = self.base_class
+          c.with_id!(opts.delete(:with_id)) if opts.has_key? :with_id
+          c.no_member! if opts.has_key? :no_member
+          c.generate(name, self, &block)
+        end
+        collections << current_collection
       end
 
       def self.parent_routes
@@ -139,7 +139,7 @@ module Sinatra
         route.reverse.join('/')+'/'
       end
 
-      def self.set_base_class(klass)
+      def self.base_class=(klass)
         @klass = klass
       end
 
@@ -173,7 +173,9 @@ module Sinatra
       def self.full_path;root_path + route_for(path);end
       def self.collection_name; @collection_name; end
       def self.parent_collection; @parent_collection; end
-      def self.collections; @collections; end
+      def self.collections
+        @collections ||= []
+      end
 
       def self.description(text=nil)
         return @description if text.nil?
@@ -182,6 +184,10 @@ module Sinatra
 
       def self.documentation
         Rabbit::Documentation.for_collection(self, operations)
+      end
+
+      def self.[](obj_id)
+        collections.find { |c| c.collection_name == obj_id } || operation(obj_id)
       end
 
 

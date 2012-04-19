@@ -46,6 +46,11 @@ describe Sinatra::Rabbit::Collection do
     Sample.collection(:non_existing_sample).must_be_nil
   end
 
+  it 'should return SampleCollection using [] method' do
+    Sample[:sample].must_equal Sinatra::Rabbit::SampleCollection
+    Sample[:non_existing_sample].must_be_nil
+  end
+
   it "should allow to register new collection dynamically" do
     Sample.collection(:dynamic) do
       description 'DynamicTest'
@@ -91,6 +96,18 @@ describe Sinatra::Rabbit::Collection do
   it "should return operations and find index operation" do
     Sample.collection(:sample).operations.wont_be_empty
     Sample.collection(:sample).operations.must_include Sinatra::Rabbit::SampleCollection::IndexOperation
+  end
+
+  it "should return operation using [] syntax" do
+    Sample[:sample][:index].must_equal Sinatra::Rabbit::SampleCollection::IndexOperation 
+  end
+
+  it "should return subcollection using [] syntax" do
+    Sample[:sample][:subsample].must_equal Sinatra::Rabbit::SampleCollection::SubsampleCollection
+  end
+
+  it "should return operation from subcollection using the [] syntax" do
+    Sample[:sample][:subsample][:start].must_equal Sinatra::Rabbit::SampleCollection::SubsampleCollection::StartOperation
   end
 
   it "should allow to define subcollection" do

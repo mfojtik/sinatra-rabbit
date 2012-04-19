@@ -30,25 +30,33 @@ module Sinatra
       #       end
       #     end
       def collection(name, &block)
-        return @collections.find { |c| c.collection_name == name } unless block_given?
-        @collections ||= []
-        current_collection = BaseCollection.collection_class(name)
-        current_collection.set_base_class(self)
-        current_collection.generate(name, &block)
-        @collections << current_collection
-        Sinatra::Rabbit::DSL.register_collection(current_collection)
+        return self[name] unless block_given?
+        current_collection = BaseCollection.collection_class(name) do |c|
+          c.base_class = self
+          c.generate(name, &block)
+        end
+        collections << current_collection
+        DSL << current_collection
         use current_collection
       end
 
       # Return all defined collections
       #
       def collections
-        @collections
+        @collections ||= []
       end
 
       def self.register_collection(c, &block)
         @collections ||= []
         @collections << c
+      end
+
+      def self.<<(c)
+        register_collection(c)
+      end
+
+      def [](collection)
+        collections.find { |c| c.collection_name == collection }
       end
 
     end
