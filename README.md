@@ -31,12 +31,12 @@ Features
   * `operation :show` is being mapped as 'GET /:collection/:id'
   * `operation :update` is being mapped as 'PUT /:collection/:id'
   * `operation :destroy` is being mapped as 'DELETE /:collection/:id'
+  * `action :reboot` is being mapped as 'POST /:collection/:id/reboot'
 * Use of Sinatra route conditions
 <pre>
   <code>
-    operation :stop, :if => driver.support_stop_operation? do
+    action :stop, :with_capability => :stop_operation do
      description "Stop virtual machine"
-     param :id, :string, :required, "Virtual Machine ID"
      control do
       # ...
      end
