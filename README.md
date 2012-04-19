@@ -10,7 +10,7 @@ much easier and more fun.
 Rabbit maps REST resources to 'collections'. Every collection then could define
 CRUD and other operations to manipulate with resource. Rabbit will handle
 parameter validation and capability checks for you, so you can focus on the
-structure of REST API.
+structure and design of your REST API.
 
 Once your REST API is designed, Rabbit will make it available as modular Sinatra
 application thus mountable to any Rack compatible container (Rails, Padrino...)
