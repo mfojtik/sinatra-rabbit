@@ -1,0 +1,26 @@
+%html
+  %head
+  %body
+    %h1=@operation.name.gsub('Sinatra::Rabbit::', '')
+    %blockquote=@operation.description
+    .url=@operation.full_path
+    - if @operation.required_capability
+      %p{:class => :requires}=@operation.required_capability
+    - @operation.features.each do |f|
+      .feature
+        .name=f.name
+        %blockquote=f.description
+    %table.parameters
+      %thead
+        %tr
+          %th Name
+          %th Type
+          %th Valid values
+          %th Description
+      %tbody
+        - (@operation.params + @operation.features_params).each do |p|
+          %tr
+            %td{ :class => p.required? && 'required'}=p.name
+            %td=p.klass
+            %td=p.values
+            %td=p.description

@@ -1,0 +1,8 @@
+%html
+  %head
+  %body
+    %h1=self.class.name
+    %ul
+      - self.class.collections.each do |c|
+        %li
+          %a{:href => c.docs_url }=c.name

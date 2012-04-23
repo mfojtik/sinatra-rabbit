@@ -22,20 +22,21 @@ module Sinatra
       enable :method_overide
 
       def self.route_for(collection, operation_name=nil, member=:member)
-        if operation_name
+        unless operation_name.nil?
           o = Sinatra::Rabbit::STANDARD_OPERATIONS[operation_name]
           if o
             o = o.clone
             o[:member] = false if member == :no_member
             o[:collection] = true if member == :no_id
-            if member == :no_id_and_member
+            if member == :no_id_and_member or member == :docs
               o[:collection] = true
               o[:member] = true
             end
           end
           operation_path = (o && o[:member]) ? operation_name.to_s : nil
           operation_path = operation_name.to_s unless o
-          id_param = (o && o[:collection]) ? nil : (member.kind_of?(Hash) ? member[:id_name] : ':id')
+          id_param = (o && o[:collection]) ? nil : (member.kind_of?(Hash) ? member[:id_name] : ":id")
+          id_param.gsub!(':', '') if id_param and member  == :docs
           [route_for(collection), id_param, operation_path].compact.join('/')
         else
           collection.to_s

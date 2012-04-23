@@ -28,7 +28,7 @@ describe Sample do
   end
 
   it "should respond 200 to HEAD request for index operation in sample collection" do
-    head '/sample'
+    head '/sample/index'
     status.must_equal 200
   end
 

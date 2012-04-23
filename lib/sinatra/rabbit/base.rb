@@ -91,6 +91,9 @@ module Sinatra
     def self.included(base)
       configuration[:root_path] = '/'
       base.register(DSL) if base.respond_to? :register
+      base.get '/docs' do
+        haml File.read(File.join(File.dirname(__FILE__), '..', 'docs', 'api.haml'))
+      end
     end
 
     class Collection < BaseCollection
@@ -101,21 +104,34 @@ module Sinatra
         @collection_name = name.to_sym
         @parent_collection = parent_collection
         class_eval(&block)
-        generate_head_route if not Rabbit.disabled? :head_routes
-        generate_option_route if not Rabbit.disabled? :options_routes
+        generate_head_route unless Rabbit.disabled? :head_routes
+        generate_option_route unless Rabbit.disabled? :options_routes
+        generate_docs_route unless Rabbit.disabled? :docs
         self
       end
 
       def self.generate_option_route
-        options full_path do
+        base_class.options '/docs' + full_path do
           header 'Allow' => operations.map { |o| o.operation_name }.join(',')
           status 200
         end
       end
 
       def self.generate_head_route
-        head full_path do
+        base_class.head full_path do
           status 200
+        end
+      end
+
+      def self.docs_url
+        (root_path || '/') + 'docs/' + route_for(path)
+      end
+
+      def self.generate_docs_route
+        collection = self
+        base_class.get docs_url do
+          @collection = collection
+          haml File.read(File.join(File.dirname(__FILE__), '..', 'docs', 'collection.haml'))
         end
       end
 
@@ -190,7 +206,7 @@ module Sinatra
       end
 
       def self.full_path
-        root_path + route_for(path)
+        (root_path || '') + route_for(path)
       end
 
       def self.description(text=nil)
@@ -240,7 +256,7 @@ module Sinatra
 
         new_operation.generate_option_route(root_path + route_for(path, operation_name, :no_id_and_member)) unless Rabbit.disabled?(:options_routes)
         new_operation.generate_head_route(root_path + route_for(path, operation_name, :member)) unless Rabbit.disabled?(:head_routes)
-
+        new_operation.generate_docs_route(new_operation.docs_url) unless Rabbit.disabled?(:doc_routes)
         self
       end
 
@@ -253,7 +269,15 @@ module Sinatra
         @operations ||= []
       end
 
-      class Operation
+      def self.features_for(operation_name)
+        features.select { |f| f.operations.map { |o| o.name}.include?(operation_name) }
+      end
+
+      class Operation < BaseCollection
+
+        def self.docs_url
+          @collection.root_path + ['docs', @collection.collection_name, operation_name].join('/')
+        end
 
         def self.route=(path)
           @operation_path = path
@@ -273,12 +297,28 @@ module Sinatra
           end
         end
 
+        def self.generate_docs_route(path)
+          operation = self
+          @collection.base_class.get path do
+            @operation = operation
+            haml File.read(File.join(File.dirname(__FILE__), '..', 'docs', 'operation.haml'))
+          end
+        end
+
         def self.generate_option_route(path)
           operation_params = params.map { |p| p.to_s }.join(',')
           @collection.base_class.options path do
             headers 'Allow' => operation_params
             status 200
           end
+        end
+
+        def self.features
+          @collection.features_for(operation_name)
+        end
+
+        def self.features_params
+          features.map { |f| f.operations.map { |o| o.params_array } }.flatten
         end
 
         def self.generate(collection, name, opts={}, &block)
@@ -289,7 +329,7 @@ module Sinatra
             @method = @options.delete(:http_method)
           end
 
-          @collection.features.select { |f| f.operations.map { |o| o.name}.include?(operation_name) }.each do |feature|
+          features.each do |feature|
             if Sinatra::Rabbit.configuration[:check_features]
               next unless Sinatra::Rabbit.configuration[:check_features].call(collection.collection_name, feature.name)
             end
@@ -312,10 +352,14 @@ module Sinatra
         def self.full_path; @operation_path; end
         def self.operation_name; @name; end
 
+        def self.required_capability
+          @options[:with_capability]
+        end
+
         def self.has_capability?
           @capability ||= Sinatra::Rabbit.configuration[:check_capability]
-          if @capability and @options.has_key?(:with_capability)
-            @capability.call(@options[:with_capability])
+          if @capability and required_capability
+            @capability.call(required_capability)
           else
             true
           end

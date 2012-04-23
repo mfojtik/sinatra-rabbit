@@ -1,0 +1,24 @@
+%html
+  %head
+  %body
+    %h1=@collection.name.gsub('Sinatra::Rabbit::', '')
+    %blockquote=@collection.description
+    .url=@collection.full_path
+    .features
+      - @collection.features.each do |f|
+        %p.feature=f.name
+    %table.operations
+      %thead
+        %tr
+          %th Name
+          %th Type
+          %th Valid values
+          %th Description
+      %tbody
+        - @collection.operations.each do |o|
+          %tr
+            %td.name
+              %a{:href => o.docs_url }
+            %td.method=o.http_method.to_s.upcase
+            %td.url
+              %a{:href=>o.full_path}=o.full_path

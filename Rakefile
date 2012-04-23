@@ -23,6 +23,13 @@ namespace :test do
     #t.options = "-v"
   end
 
+  Rake::TestTask.new(:docs) do |t|
+    t.ruby_opts << "-r./tests/fixtures.rb"
+    t.test_files = FileList['tests/docs_test.rb']
+    t.verbose = false
+    #t.options = "-v"
+  end
+
 end
 
 desc "Run RSpec with code coverage"

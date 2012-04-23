@@ -4,6 +4,8 @@ require 'sinatra/base'
 $:.unshift File.join(File::dirname(__FILE__), '..', 'lib')
 require 'sinatra/rabbit'
 
+API_ROOT_URL = '/'
+
 ############## EXAMPLE #################
 
 Sinatra::Rabbit.configure do
@@ -15,9 +17,17 @@ end
 class Example < Sinatra::Base
 
   include Sinatra::Rabbit
+  include Sinatra::Rabbit::Features
 
-  configure do
-    enable :logging
+  features do
+
+    feature :user_name, :for => :images do
+      description 'Hello world'
+      operation :show do
+        param :name, :string, :optional, 'Hello parameter'
+      end
+    end
+
   end
 
   collection :instances do
@@ -59,7 +69,7 @@ class Example < Sinatra::Base
       end
     end
 
-    operation :show do
+    operation :show, :with_capability => :test1 do
       description "Index operation description"
       param :id,  :string, :required
       param :r1,  :string, :optional, "Optional parameter"
