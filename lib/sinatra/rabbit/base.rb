@@ -356,37 +356,28 @@ module Sinatra
           @options[:with_capability]
         end
 
-        def self.has_capability?
-          @capability ||= Sinatra::Rabbit.configuration[:check_capability]
-          if @capability and required_capability
-            @capability.call(required_capability)
-          else
-            true
-          end
-        end
-
         def self.description(text=nil)
           @description ||= text
         end
 
         def self.control(&block)
           params_def = @params
-          if not has_capability?
-            @control = Proc.new { [412, { 'Expect' => @options[:with_capability]}, "The required capability to execute this operation is missing"] }
-          else
-            @control ||= Proc.new do
-              begin
-                Rabbit::Validator.validate!(params, params_def)
-              rescue => e
-                if e.kind_of? Rabbit::Validator::ValidationError
-                  halt e.http_status_code, e.message
-                else
-                  raise e
-                end
-              end
-              instance_eval(&block)
+          klass = self
+          @control ||= Proc.new {
+            if settings.respond_to?(:capability) and !settings.capability(klass.required_capability)
+              halt([412, { 'Expect' => klass.required_capability.to_s }, "The required capability to execute this operation is missing"])
             end
-          end
+            begin
+              Rabbit::Validator.validate!(params, params_def)
+            rescue => e
+              if e.kind_of? Rabbit::Validator::ValidationError
+                halt e.http_status_code, e.message
+              else
+                raise e
+              end
+            end
+            instance_eval(&block) if block_given?
+          }
         end
 
         def self.param(*args)
