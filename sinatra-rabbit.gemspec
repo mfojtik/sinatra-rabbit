@@ -29,12 +29,13 @@ Gem::Specification.new do |s|
     a simple REST API using easy to undestand DSL.
   EOF
 
-  s.version = '1.0.7'
+  s.version = '1.0.9'
   s.date = Time.now
   s.summary = %q{Sinatra REST API DSL}
   s.files = FileList[
     'lib/sinatra/*.rb',
     'lib/sinatra/rabbit/*.rb',
+    'tests/*.rb',
     'LICENSE',
     'README.md',
     'sinatra-rabbit.gemspec',

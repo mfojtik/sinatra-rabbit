@@ -360,6 +360,12 @@ module Sinatra
           @description ||= text
         end
 
+        # TODO: This method is here only to maintain 'backward' compatibility
+        #
+        def self.has_capability?
+          true
+        end
+
         def self.control(&block)
           params_def = @params
           klass = self
