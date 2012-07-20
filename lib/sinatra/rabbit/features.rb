@@ -80,7 +80,7 @@ module Sinatra
         feature = @features.find { |f| f.name == name }
         return feature unless block_given?
         if feature
-          feature.class_eval(&block)
+          feature.instance_eval(&block)
         else
           @features << Feature.new(name, opts, &block) if block_given?
         end
