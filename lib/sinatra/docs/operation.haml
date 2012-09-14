@@ -1,26 +1,33 @@
 %html
   %head
+    %style{:type => 'text/css'}=css
   %body
-    %h1=@operation.name.gsub('Sinatra::Rabbit::', '')
-    %blockquote=@operation.description
-    .url=@operation.full_path
-    - if @operation.required_capability
-      %p{:class => :requires}=@operation.required_capability
-    - @operation.features.each do |f|
-      .feature
-        .name=f.name
-        %blockquote=f.description
-    %table.parameters
-      %thead
-        %tr
-          %th Name
-          %th Type
-          %th Valid values
-          %th Description
-      %tbody
-        - (@operation.params + @operation.features_params).each do |p|
+    %ul.breadcrumb.well{:style=>'margin-bottom:0;'}
+      %li
+        %a{ :href => url('/docs') } Documentation
+        %span.divider='/'
+      %li
+        %a{ :href => url(collection.docs_url)}=collection.collection_name.to_s.split('_').map {|p| p.capitalize}.join(' ')
+        %span.divider='/'
+      %li.active=operation.operation_name.to_s.capitalize
+    .container
+      %h1.pull-right=operation.operation_name
+      %blockquote.clearfix
+        %p{ :style => 'width : 400px;font-size:small;padding-top:1em'}
+          =operation.description
+
+      %h3 Parameters
+      %table.table.table-bordered
+        %thead
           %tr
-            %td{ :class => p.required? && 'required'}=p.name
-            %td=p.klass
-            %td=p.values
-            %td=p.description
+            %th Name
+            %th Type
+            %th Valid values
+            %th Description
+        %tbody
+          - (operation.params + operation.features_params).each do |p|
+            %tr
+              %td{ :class => p.required? && 'required'}=p.name
+              %td=p.klass
+              %td=p.values
+              %td=p.description

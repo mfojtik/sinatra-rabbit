@@ -59,7 +59,7 @@ module Sinatra
       end
 
       def self.root_path
-        Sinatra::Rabbit.configuration[:root_path]
+        Sinatra::Rabbit.configuration[:root_path] || '/'
       end
 
     end

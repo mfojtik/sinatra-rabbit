@@ -89,10 +89,12 @@ module Sinatra
     #     end
     #
     def self.included(base)
-      configuration[:root_path] = '/'
+      configuration[:root_path] ||= '/'
       base.register(DSL) if base.respond_to? :register
       base.get '/docs' do
-        haml File.read(File.join(File.dirname(__FILE__), '..', 'docs', 'api.haml'))
+        css_file = File.read(File.join(File.dirname(__FILE__), '..', 'docs', 'bootstrap.min.css'))
+        index_file = File.read(File.join(File.dirname(__FILE__), '..', 'docs', 'api.haml'))
+        haml index_file, :locals => { :base => base.documentation_class, :css => css_file }
       end
     end
 
@@ -124,14 +126,15 @@ module Sinatra
       end
 
       def self.docs_url
-        (root_path || '/') + 'docs/' + route_for(path)
+        root_path  + 'docs/' + route_for(path)
       end
 
       def self.generate_docs_route
         collection = self
         base_class.get docs_url do
-          @collection = collection
-          haml File.read(File.join(File.dirname(__FILE__), '..', 'docs', 'collection.haml'))
+          css_file = File.read(File.join(File.dirname(__FILE__), '..', 'docs', 'bootstrap.min.css'))
+          collection_file = File.read(File.join(File.dirname(__FILE__), '..', 'docs', 'collection.haml'))
+          haml collection_file, :locals => { :collection => collection, :css => css_file }
         end
       end
 
@@ -206,7 +209,7 @@ module Sinatra
       end
 
       def self.full_path
-        (root_path || '') + route_for(path)
+        root_path + route_for(path)
       end
 
       def self.description(text=nil)
@@ -299,9 +302,15 @@ module Sinatra
 
         def self.generate_docs_route(path)
           operation = self
+          collection = @collection
           @collection.base_class.get path do
-            @operation = operation
-            haml File.read(File.join(File.dirname(__FILE__), '..', 'docs', 'operation.haml'))
+            css_file = File.read(File.join(File.dirname(__FILE__), '..', 'docs', 'bootstrap.min.css'))
+            operation_file = File.read(File.join(File.dirname(__FILE__), '..', 'docs', 'operation.haml'))
+            haml operation_file, :locals => {
+              :css => css_file,
+              :operation => operation,
+              :collection => collection
+            }
           end
         end
 
