@@ -350,7 +350,7 @@ module Sinatra
           if Sinatra::Rabbit::STANDARD_OPERATIONS.has_key? name
             required_params = Sinatra::Rabbit::STANDARD_OPERATIONS[name][:required_params]
             required_params.each do |p|
-              param p, :required, :string, "The #{p} parameter"
+              param p, :string, :required, "The #{p} parameter"
             end unless required_params.nil?
           end
           class_eval(&block)

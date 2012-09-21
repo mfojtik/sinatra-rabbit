@@ -23,12 +23,24 @@
           %tbody
             - collection.features.each do |f|
               %tr
-                %td=f.name
+                %td
+                  %em=f.name
                 %td
                   - f.constraints.each do |c, v|
                     ="#{c}=#{v}<br/>"
                 %td
                   %small=f.description
+
+      - if !collection.collections.empty?
+        %h3 Sub-Collections
+        %table.table.table-bordered
+          %tbody
+            - collection.collections.each do |c|
+              %tr
+                %td
+                  %a{ :href => url(c.docs_url)}=c.collection_name
+                %td
+                  %small=c.description || '%s subcollection of %s' % [ c.collection_name.to_s.capitalize, collection.collection_name]
 
       %h3 Operations
       %table.table.table-bordered
