@@ -14,6 +14,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+require 'haml'
 require_relative './dsl'
 require_relative './param'
 require_relative './base_collection'
