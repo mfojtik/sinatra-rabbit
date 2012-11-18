@@ -94,7 +94,7 @@ module Sinatra
       base.get '/docs' do
         css_file = File.read(File.join(File.dirname(__FILE__), '..', 'docs', 'bootstrap.min.css'))
         index_file = File.read(File.join(File.dirname(__FILE__), '..', 'docs', 'api.haml'))
-        haml index_file, :locals => { :base => base.documentation_class, :css => css_file }
+        haml index_file, :locals => { :base => base.respond_to?(:documentation_class) ? base.documentation_class : base, :css => css_file }
       end
     end
 
