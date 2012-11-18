@@ -24,7 +24,7 @@ describe 'Documentation' do
 
   it "should return list of collections in entrypoint" do
     get '/docs'
-    html.css('html body > h1').text.must_equal 'Sample'
+    html.css('html body h1').text.must_equal 'Sample'
     html.css('html body ul li').wont_be_empty
     html.css('html body ul li a').wont_be_empty
   end
