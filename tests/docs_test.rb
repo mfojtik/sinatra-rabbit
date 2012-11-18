@@ -36,7 +36,7 @@ describe 'Documentation' do
 
   it "should return valid collection description when query collection documentation" do
     get '/docs/sample'
-    html.css('html body > blockquote').text.must_equal 'Test'
+    html.css('html body blockquote p').text.strip.must_equal 'Test'
   end
 
   it "should return valid collection url when query collection documentation" do
