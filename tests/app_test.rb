@@ -27,6 +27,19 @@ describe Sample do
     status.must_equal 200
   end
 
+  it "should respond to OPTIONS request for sample collection" do
+    options '/sample'
+    status.must_equal 200
+    allow_header = last_response.headers['Allow'].split(',')
+    allow_header.wont_be_empty
+    allow_header.must_include 'OPTIONS'
+    allow_header.must_include 'GET'
+    allow_header.must_include 'POST'
+    allow_header.must_include 'DELETE'
+    last_response.headers['Content-Length'].must_equal '0'
+    last_response.body.must_be_empty
+  end
+
   it "should respond 200 to HEAD request for index operation in sample collection" do
     head '/sample/index'
     status.must_equal 200
