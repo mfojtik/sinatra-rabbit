@@ -41,7 +41,7 @@ describe 'Documentation' do
 
   it "should return list of features when query collection documentation" do
     get '/docs/sample'
-    html.css('html body .features .feature').map { |f| f.text}.must_include 'user_data', 'user_name'
+    html.css('html body .features .feature').map { |f| f.text.strip}.must_include 'user_data', 'user_name'
   end
 
   it "should return complete list of operations when query collection documentation" do
