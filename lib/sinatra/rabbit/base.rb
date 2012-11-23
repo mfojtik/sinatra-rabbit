@@ -107,14 +107,15 @@ module Sinatra
         @parent_collection = parent_collection
         class_eval(&block)
         generate_head_route unless Rabbit.disabled? :head_routes
-        generate_option_route unless Rabbit.disabled? :options_routes
+        generate_options_route unless Rabbit.disabled? :options_routes
         generate_docs_route unless Rabbit.disabled? :docs
         self
       end
 
-      def self.generate_option_route
-        base_class.options '/docs' + full_path do
-          header 'Allow' => operations.map { |o| o.operation_name }.join(',')
+      def self.generate_options_route
+        methods = (['OPTIONS'] + operations.map { |o| o.http_method.to_s.upcase }).uniq.join(',')
+        base_class.options full_path do
+          headers 'Allow' => methods
           status 200
         end
       end
@@ -257,7 +258,7 @@ module Sinatra
         # Define Sinatra route and generate OPTIONS route if enabled
         base_class.send(new_operation.http_method || http_method_for(operation_name), new_operation.full_path, route_options, &new_operation.control)
 
-        new_operation.generate_option_route(root_path + route_for(path, operation_name, :no_id_and_member)) unless Rabbit.disabled?(:options_routes)
+        new_operation.generate_options_route(root_path + route_for(path, operation_name, :no_id_and_member)) unless Rabbit.disabled?(:options_routes)
         new_operation.generate_head_route(root_path + route_for(path, operation_name, :member)) unless Rabbit.disabled?(:head_routes)
         new_operation.generate_docs_route(new_operation.docs_url) unless Rabbit.disabled?(:doc_routes)
         self
@@ -314,7 +315,7 @@ module Sinatra
           end
         end
 
-        def self.generate_option_route(path)
+        def self.generate_options_route(path)
           operation_params = params.map { |p| p.to_s }.join(',')
           @collection.base_class.options path do
             headers 'Allow' => operation_params
