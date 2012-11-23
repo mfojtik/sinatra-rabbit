@@ -31,7 +31,7 @@ describe 'Documentation' do
 
   it "should return valid collection name when query collection documentation" do
     get '/docs/sample'
-    html.css('html body > h1').text.must_equal 'SampleCollection'
+    html.css('html body h1').text.must_equal 'Sample'
   end
 
   it "should return valid collection description when query collection documentation" do
