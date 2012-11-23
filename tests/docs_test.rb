@@ -39,11 +39,6 @@ describe 'Documentation' do
     html.css('html body > blockquote').text.must_equal 'Test'
   end
 
-  it "should return valid collection url when query collection documentation" do
-    get '/docs/sample'
-    html.css('html body > .url').text.must_equal '/sample'
-  end
-
   it "should return list of features when query collection documentation" do
     get '/docs/sample'
     html.css('html body .features .feature').map { |f| f.text}.must_include 'user_data', 'user_name'
