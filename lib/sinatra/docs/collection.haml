@@ -20,10 +20,10 @@
               %th Name
               %th Constraints
               %th Description
-          %tbody
+          %tbody.features
             - collection.features.each do |f|
               %tr
-                %td
+                %td.feature
                   %em=f.name
                 %td
                   - f.constraints.each do |c, v|
