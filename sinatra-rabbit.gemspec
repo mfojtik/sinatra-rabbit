@@ -29,7 +29,7 @@ Gem::Specification.new do |s|
     a simple REST API using easy to undestand DSL.
   EOF
 
-  s.version = '1.1.2'
+  s.version = '1.1.3'
   s.date = Time.now
   s.summary = %q{Sinatra REST API DSL}
   s.files = FileList[
