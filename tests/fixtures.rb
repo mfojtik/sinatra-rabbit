@@ -42,6 +42,18 @@ class Sample < Sinatra::Base
 
   collection :sample do
 
+    operation :volumes, :http_method => :get do
+      control do
+        'index'
+      end
+    end
+
+    operation :volumes, :http_method => :put do
+      control do
+        'put'
+      end
+    end
+
     collection :subsample, :with_id => :sub_id do
 
       collection :secondsubsample do
@@ -121,6 +133,8 @@ class Sample < Sinatra::Base
         status 200
       end
     end
+
+
 
   end
 

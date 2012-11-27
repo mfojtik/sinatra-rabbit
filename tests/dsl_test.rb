@@ -146,7 +146,7 @@ end
 describe Sinatra::Rabbit::Collection::Operation do
 
   it "should have the :restart action" do
-    Sample.collection(:second_sample).operation(:restart).must_equal Sinatra::Rabbit::SecondSampleCollection::RestartOperation
+    Sample.collection(:second_sample).operation(:restart).must_equal Sinatra::Rabbit::SecondSampleCollection::RestartPostOperation
     Sample.collection(:second_sample).operation(:restart).full_path.must_equal '/second_sample/:id/restart'
     Sample.collection(:second_sample).operation(:restart).http_method.must_equal :post
   end

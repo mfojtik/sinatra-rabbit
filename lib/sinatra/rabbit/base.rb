@@ -225,7 +225,13 @@ module Sinatra
 
       def self.operation(operation_name, opts={}, &block)
         # Return operation when no block is given
-        return operations.find { |o| o.operation_name == operation_name } unless block_given?
+        if !block_given?
+          if opts[:http_method]
+            return operations.find { |o| (o.operation_name == operation_name) && (opts[:http_method] == o.http_method) }
+          else
+            return operations.find { |o| o.operation_name == operation_name }
+          end
+        end
 
         # Check if current operation is not already registred
         if operation_registred?(operation_name)
@@ -233,7 +239,7 @@ module Sinatra
         end
 
         # Create operation class
-        new_operation = operation_class(self, operation_name).generate(self, operation_name, opts, &block)
+        new_operation = operation_class(self, operation_name, opts[:http_method]).generate(self, operation_name, opts, &block)
         operations << new_operation
 
         # Add route conditions if defined
@@ -408,15 +414,19 @@ module Sinatra
       private
 
       def self.operation_registred?(name)
-        operations.any? { |o| o.name == name }
+        operations.any? { |o| (o.name == name) and (o.http_method == http_method ) }
       end
 
       # Create an unique class name for all operations within Collection class
-      def self.operation_class(collection_klass, operation_name)
+      # If there are more operations with the same name but with different HTTP
+      # method, then the operation class will get suffix based on the HTTP
+      # method.
+      #
+      def self.operation_class(collection_klass, operation_name, operation_method=nil)
         begin
-          collection_klass.const_get(operation_name.to_s.camelize + 'Operation')
+          collection_klass.const_get(operation_name.to_s.camelize + "#{operation_method ? operation_method.to_s.capitalize : ''}Operation")
         rescue NameError
-          collection_klass.const_set(operation_name.to_s.camelize + 'Operation', Class.new(Operation))
+          collection_klass.const_set(operation_name.to_s.camelize + "#{operation_method ? operation_method.to_s.capitalize : ''}Operation", Class.new(Operation))
         end
       end
 
