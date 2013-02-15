@@ -7,7 +7,7 @@
         %a{ :href => url('/docs') } Documentation
         %span.divider='/'
       %li
-        %a{ :href => url(collection.docs_url)}=collection.collection_name.to_s.split('_').map {|p| p.capitalize}.join(' ')
+        %a{ :href => url(collection.docs_url)}=collection.collection_name.to_s.split('_').map {|p| p.capitalize }.join(' ')
         %span.divider='/'
       %li.active=operation.operation_name.to_s.capitalize
     .container
@@ -43,7 +43,7 @@
                 %td
                   %em=p.name
                   ="<sup style='color:red;'>*</sup>" if p.required?
-                %td=p.klass.capitalize
+                %td=p.klass.to_s.capitalize
                 %td=p.values
                 %td
                   %small=p.description
