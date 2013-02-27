@@ -49,7 +49,16 @@ module Sinatra
       end
 
       def self.collection_class(name, parent_class=nil)
-        klass = parent_class || Sinatra::Rabbit
+        if base_module = Rabbit::configuration[:base_module]
+          if base_module.const_defined? 'Rabbit'
+            base_module = base_module::Rabbit
+          else
+            base_module = base_module.const_set('Rabbit', Module.new)
+          end
+        else
+          base_module = Sinatra::Rabbit
+        end
+        klass = parent_class || base_module
         begin
           yield k = klass.const_get(name.to_s.camelize + 'Collection')
         rescue NameError

@@ -89,9 +89,13 @@ module Sinatra
     #       include Sinatra::Rabbit
     #     end
     #
+
     def self.included(base)
       configuration[:root_path] ||= '/'
-      base.register(DSL) if base.respond_to? :register
+      base.register(Rabbit::DSL) if base.respond_to? :register
+      if configuration[:use_namespace]
+        configuration[:base_module] = const_get(base.name.split('::').first)
+      end
       base.get '/docs' do
         css_file = File.read(File.join(File.dirname(__FILE__), '..', 'docs', 'bootstrap.min.css'))
         index_file = File.read(File.join(File.dirname(__FILE__), '..', 'docs', 'api.haml'))
@@ -101,7 +105,7 @@ module Sinatra
 
     class Collection < BaseCollection
 
-      include DSL
+      include Rabbit::DSL
 
       def self.generate(name, parent_collection=nil, &block)
         @collection_name = name.to_sym
