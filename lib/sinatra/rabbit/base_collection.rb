@@ -50,9 +50,9 @@ module Sinatra
 
       def self.collection_class(name, parent_class=nil)
         if base_module = Rabbit::configuration[:base_module]
-          if base_module.const_defined? 'Rabbit'
-            base_module = base_module::Rabbit
-          else
+          begin
+            base_module = base_module.const_get 'Rabbit'
+          rescue NameError
             base_module = base_module.const_set('Rabbit', Module.new)
           end
         else
