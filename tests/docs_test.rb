@@ -46,7 +46,7 @@ describe 'Documentation' do
 
   it "should return complete list of operations when query collection documentation" do
     get '/docs/sample'
-    html.css('html body .operations tr').size.must_equal 6
+    html.css('html body .operations tr').size.must_equal 8
   end
 
   it "should provide valid links from entrypoint to collection" do

@@ -81,4 +81,14 @@ describe Sample do
     last_response.body.must_equal "Parameter 'arch' value '3' not found in list of allowed values [1,2]"
   end
 
+  it 'should allow to define operations with same name but different http methods' do
+    get '/sample/123/volumes'
+    last_response.status.must_equal 200
+    last_response.body.must_equal 'index'
+
+    put '/sample/123/volumes'
+    last_response.status.must_equal 200
+    last_response.body.must_equal 'put'
+  end
+
 end
